@@ -1,0 +1,275 @@
+# B2B Auto Marketplace - Cursor Rules
+
+You are an expert full-stack developer working on a B2B used car marketplace MVP.
+
+## Project Overview
+
+A marketplace connecting Chinese used car sellers with UAE dealers. The core innovation is **dynamic grouping** - buyers select which attributes to group vehicles by (make, model, year, color, etc.) and see aggregated listings for bulk purchase.
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript (strict)
+- **Database**: PostgreSQL via Supabase
+- **ORM**: Prisma
+- **Auth**: Supabase Auth
+- **Styling**: Tailwind CSS + shadcn/ui
+- **State**: Zustand (cart)
+- **Excel Parsing**: xlsx
+
+## Critical: Spec-Driven Development
+
+This project uses spec-driven development. ALWAYS:
+
+1. **Before coding**: Read `.ai/CONTEXT.md` for current state
+2. **Before features**: Read the relevant spec in `specs/features/`
+3. **After coding**: Update `.ai/CONTEXT.md` and `.ai/TASK_QUEUE.md`
+
+### Key Files to Reference
+
+```
+.ai/
+├── CONTEXT.md      # Current state - READ FIRST
+├── TASK_QUEUE.md   # What to build - CHECK PRIORITIES
+├── DECISIONS.md    # Why things are built this way
+└── PROMPTS.md      # Reusable prompts
+
+specs/
+├── ARCHITECTURE.md # System design
+├── DATA_MODEL.md   # Database schema
+└── features/       # Feature specifications
+```
+
+## Code Patterns
+
+### Database Queries (Prisma)
+
+```typescript
+import { prisma } from '@/lib/prisma';
+
+// Always use Prisma, not Supabase client for DB
+const vehicles = await prisma.vehicle.findMany({
+  where: { status: 'PUBLISHED' },
+  include: { seller: true, images: true },
+});
+```
+
+### Supabase Auth (Server)
+
+```typescript
+import { createClient } from '@/lib/supabase/server';
+
+export default async function Page() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+}
+```
+
+### Supabase Auth (Client)
+
+```typescript
+'use client';
+import { createClient } from '@/lib/supabase/client';
+
+const supabase = createClient();
+await supabase.auth.signInWithPassword({ email, password });
+```
+
+### Cart Store
+
+```typescript
+'use client';
+import { useCartStore } from '@/stores/cart-store';
+
+const items = useCartStore((state) => state.items);
+const addItem = useCartStore((state) => state.addItem);
+```
+
+### Server vs Client Components
+
+```typescript
+// Server Component (default) - can access DB directly
+export default async function Page() {
+  const data = await prisma.vehicle.findMany();
+  return <ClientComponent data={data} />;
+}
+
+// Client Component - for interactivity
+'use client';
+export function ClientComponent({ data }) {
+  const [state, setState] = useState();
+  // ...
+}
+```
+
+## File Structure
+
+```
+src/
+├── app/
+│   ├── layout.tsx              # Root layout
+│   ├── page.tsx                # Landing
+│   ├── login/page.tsx
+│   ├── register/page.tsx
+│   ├── api/                    # API routes
+│   ├── seller/                 # Seller pages
+│   │   ├── layout.tsx
+│   │   ├── page.tsx            # Dashboard
+│   │   ├── upload/page.tsx
+│   │   └── inventory/page.tsx
+│   └── buyer/                  # Buyer pages
+│       ├── layout.tsx
+│       ├── page.tsx            # Browse
+│       ├── cart/page.tsx
+│       └── vehicle/[id]/page.tsx
+├── components/
+│   ├── ui/                     # shadcn components
+│   ├── shared/                 # Header, etc.
+│   ├── seller/                 # Seller-specific
+│   └── buyer/                  # Buyer-specific
+├── lib/
+│   ├── prisma.ts               # Prisma client
+│   ├── utils.ts                # Utilities
+│   └── supabase/               # Supabase clients
+├── stores/
+│   └── cart-store.ts           # Zustand
+└── types/
+    └── index.ts                # TypeScript types
+```
+
+## Coding Rules
+
+### DO:
+- Use TypeScript strictly - define types for everything
+- Use Server Components by default
+- Follow existing patterns in the codebase
+- Keep components small and focused (< 150 lines)
+- Use Prisma for ALL database operations
+- Add proper error handling
+- Use shadcn/ui components from `@/components/ui`
+- Format prices with `formatPrice()` from utils
+- Format mileage with `formatMileage()` from utils
+
+### DON'T:
+- Use `any` type - ever
+- Use Supabase client for database queries (use Prisma)
+- Create large monolithic components
+- Skip error handling
+- Ignore the specs - they exist for a reason
+- Make architectural decisions without documenting in DECISIONS.md
+
+## API Route Pattern
+
+```typescript
+// src/app/api/example/route.ts
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { createClient } from '@/lib/supabase/server';
+
+export async function GET(request: Request) {
+  try {
+    // Auth check if needed
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Database operation
+    const data = await prisma.example.findMany();
+    
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error('API Error:', error);
+    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+  }
+}
+```
+
+## Component Pattern
+
+```typescript
+// Server Component with data fetching
+import { prisma } from '@/lib/prisma';
+import { ClientComponent } from './client-component';
+
+interface Props {
+  params: Promise<{ id: string }>;
+}
+
+export default async function Page({ params }: Props) {
+  const { id } = await params;
+  
+  const data = await prisma.example.findUnique({
+    where: { id },
+  });
+
+  if (!data) {
+    notFound();
+  }
+
+  return <ClientComponent data={data} />;
+}
+```
+
+```typescript
+// Client Component for interactivity
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+
+interface Props {
+  data: SomeType;
+}
+
+export function ClientComponent({ data }: Props) {
+  const [loading, setLoading] = useState(false);
+
+  const handleAction = async () => {
+    setLoading(true);
+    try {
+      // action
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Button onClick={handleAction} disabled={loading}>
+      {loading ? 'Loading...' : 'Action'}
+    </Button>
+  );
+}
+```
+
+## Key Domain Concepts
+
+### Vehicle Grouping (Core Feature)
+Buyers can select parameters (make, model, year, color, etc.) to group vehicles by. The system dynamically aggregates vehicles matching those criteria from each seller, showing "Toyota Camry 2022 White - 23 units available" instead of 23 individual listings.
+
+### Column Mapping (Upload Feature)
+Sellers upload Excel files with their own column names. We provide a mapping UI where they match their columns ("Car Brand") to our fields ("make"). Mappings can be saved and reused.
+
+### Cart
+- Stored in Zustand + localStorage
+- Groups items by seller
+- Supports bulk add from grouped listings
+
+## When Asked to Implement a Feature
+
+1. First, read the relevant spec in `specs/features/`
+2. List the files you'll create/modify
+3. Follow the UI design from the spec
+4. Use the technical patterns specified
+5. After implementation, summarize changes for .ai/ files
+
+## Session Management
+
+At the END of every session, remind the user to update:
+- `.ai/CONTEXT.md` - what was built, current state
+- `.ai/TASK_QUEUE.md` - completed tasks, new tasks
+- `.ai/DECISIONS.md` - any new decisions
+
+This ensures the next AI session has full context.
