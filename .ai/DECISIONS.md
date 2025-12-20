@@ -184,6 +184,38 @@
 
 ---
 
+### [DECISION-011] Minimal Required Fields for Upload
+**Date**: 2024-12-20
+**Status**: Accepted
+**Context**: Which fields should be mandatory when importing vehicles via Excel?
+**Decision**: Only 6 required fields: make, model, year, color, variant, condition.
+**Rationale**:
+- Reduces friction for sellers uploading inventory
+- These 6 fields are essential for grouping/display
+- Other fields (VIN, price, mileage, etc.) can be optional or added later
+- Matches typical inventory data sellers have readily available
+**Consequences**:
+- Some vehicles may have incomplete data (acceptable for MVP)
+- Validation/import logic needs to handle missing optional fields
+
+---
+
+### [DECISION-012] Field-to-Column Mapping UI (Inverted)
+**Date**: 2024-12-20
+**Status**: Accepted
+**Context**: Should the mapping UI show "Excel Column → System Field" or "System Field → Excel Column"?
+**Decision**: Show system fields on left, Excel column dropdown on right (field→column).
+**Rationale**:
+- Clearer for users: "What data goes into Make? Select from your columns"
+- Required fields are always visible (not hidden in unselected columns)
+- Easier to see which required fields are missing
+- More intuitive mental model
+**Consequences**:
+- Mapping state stored as `{ make: 'Brand', model: 'Model' }` (field→header)
+- Auto-detection logic iterates fields and finds matching headers
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

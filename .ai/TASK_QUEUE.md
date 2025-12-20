@@ -42,39 +42,45 @@
 
 ---
 
-## Current Sprint: Phase 2 - Seller Upload
+## ✅ Completed: Phase 2 - Seller Upload
 
-### P0 - In Progress
-- [ ] Create upload page UI (`/seller/upload`)
-- [ ] File drop zone component for Excel/CSV
-- [ ] Parse Excel using `xlsx` library
-- [ ] Preview first 5 rows of data
+### ✅ P0 - Complete
+- [x] Create upload page UI (`/seller/upload`)
+- [x] File drop zone component for Excel/CSV
+- [x] Parse Excel using `xlsx` library
+- [x] Preview first 5 rows of data
+- [x] 3-step wizard UI structure
 
-### P1 - Up Next
-- [ ] Column mapping interface:
-  - [ ] Show detected columns from Excel
-  - [ ] Dropdown to map each to our fields
-  - [ ] Mark required fields with asterisk
-  - [ ] Auto-detect common column names
-- [ ] Validation logic:
-  - [ ] Check required fields are mapped
-  - [ ] Validate data types (year, price, VIN format)
-  - [ ] Show row-by-row errors
-- [ ] Save column mapping:
+### ✅ P1 - Complete (Column Mapping)
+- [x] Column mapping interface:
+  - [x] System fields on left, Excel column dropdown on right
+  - [x] Dropdown to select Excel column for each field
+  - [x] Mark required fields with asterisk
+  - [x] Auto-detect common column names (Brand→make, etc.)
+  - [x] Prevent duplicate column mappings
+  - [x] Validation: block proceeding without required fields
+- [x] Required fields reduced to 6: make, model, year, color, variant, condition
+- [ ] Save column mapping (UI ready, needs API):
   - [ ] Save mapping with custom name
   - [ ] Set default mapping option
   - [ ] Load saved mappings dropdown
 
-### P2 - This Sprint
-- [ ] Import functionality:
-  - [ ] Bulk insert to database
-  - [ ] Progress indicator
-  - [ ] Skip invalid rows option
-  - [ ] Success/error summary
-- [ ] API endpoints:
-  - [ ] POST /api/upload/parse
-  - [ ] POST /api/upload/validate
-  - [ ] POST /api/upload/import
+### ✅ P2 - Complete (Validation & Import)
+- [x] Row-by-row validation:
+  - [x] Validate data types (year, price, mileage)
+  - [x] Validate enums (condition, bodyType, fuelType, transmission, drivetrain)
+  - [x] Show validation errors with row numbers
+  - [x] Auto-skip invalid rows (only valid rows imported)
+- [x] Import functionality:
+  - [x] Bulk insert to database via Prisma createMany
+  - [x] Progress indicator component
+  - [x] Success/error summary with actions
+  - [x] Import as DRAFT status
+  - [x] Skip duplicates (VIN collision handling)
+- [x] API endpoints:
+  - [x] POST /api/upload/validate
+  - [x] POST /api/upload/import
+- [ ] Column mapping persistence (moved to P3):
   - [ ] GET /api/mappings
   - [ ] POST /api/mappings
   - [ ] DELETE /api/mappings/:id
@@ -183,4 +189,7 @@
 | Date | Focus | Outcome |
 |------|-------|---------|
 | Dec 20, 2024 | Foundation setup | ✅ Auth, layouts, basic pages complete |
-| Next session | Seller Upload | Pending |
+| Dec 20, 2024 | Seller Upload P0 | ✅ Upload page, dropzone, Excel parsing, data preview |
+| Dec 20, 2024 | Seller Upload P1 | ✅ Column mapping UI, auto-detect, validation, inverted field→header mapping |
+| Dec 20, 2024 | Seller Upload P2 | ✅ Row validation, enum normalization, bulk import, progress UI, summary |
+| Next session | Phase 3 | Seller inventory management OR buyer dynamic grouping |

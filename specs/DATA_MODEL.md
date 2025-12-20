@@ -362,64 +362,106 @@ CREATE INDEX idx_vehicle_full_grouping ON vehicles(make, model, variant, year, c
 
 ## Column Mapping JSON Structure
 
+The mapping is stored as **field → Excel header** (inverted from Excel header → field). This makes it easier to display required fields and validate that all required fields are mapped.
+
 ```json
 {
   "mapping": {
-    "Brand": "make",
-    "Car Model": "model",
-    "Trim": "variant",
-    "Year of Manufacture": "year",
-    "Exterior Color": "color",
-    "Vehicle Condition": "condition",
-    "Body Style": "bodyType",
-    "Specs Region": "regionalSpecs",
-    "Fuel": "fuelType",
-    "Gearbox": "transmission",
-    "Drive": "drivetrain",
-    "Engine (L)": "engineSize",
-    "Cylinders": "cylinders",
-    "HP": "horsepower",
-    "Seats": "seatingCapacity",
-    "Doors": "doors",
-    "KM": "mileage",
-    "City": "city",
-    "Country": "country",
-    "Description": "description",
-    "VIN Number": "vin",
-    "Reg No": "registrationNo",
-    "Price USD": "price",
-    "Features": "features"
+    "make": "Brand",
+    "model": "Car Model",
+    "variant": "Trim",
+    "year": "Year of Manufacture",
+    "color": "Exterior Color",
+    "condition": "Vehicle Condition",
+    "bodyType": "Body Style",
+    "regionalSpecs": "Specs Region",
+    "fuelType": "Fuel",
+    "transmission": "Gearbox",
+    "drivetrain": "Drive",
+    "engineSize": "Engine (L)",
+    "cylinders": "Cylinders",
+    "horsepower": "HP",
+    "seatingCapacity": "Seats",
+    "doors": "Doors",
+    "mileage": "KM",
+    "city": "City",
+    "country": "Country",
+    "description": "Description",
+    "vin": "VIN Number",
+    "registrationNo": "Reg No",
+    "price": "Price USD",
+    "features": "Features"
   }
 }
 ```
 
+### TypeScript Type
+
+```typescript
+// Maps VehicleField → Excel header (or null if not mapped)
+type ColumnMappingState = Partial<Record<VehicleField, string | null>>;
+
+// Example:
+const mapping: ColumnMappingState = {
+  make: 'Brand',
+  model: 'Car Model',
+  year: 'Year',
+  // ... other mappings
+};
+```
+
 ## Required vs Optional Fields
 
-### Required for Import
-- make
-- model
-- year
-- price
-- vin
-- mileage
-- condition
-- color
-- fuelType
-- transmission
-- drivetrain
-- bodyType
-- city
-- country
+> **Note**: Per [DECISION-011], required fields for Excel import have been reduced to 6 to minimize friction for sellers. Other database-required fields use smart defaults during import.
 
-### Optional
-- variant
-- registrationNo
-- regionalSpecs
-- engineSize
-- cylinders
-- horsepower
-- seatingCapacity
-- doors
-- description
-- features
+### Required for Excel Import (Must Be Mapped)
+
+These 6 fields must be mapped from the Excel file:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| make | String | Brand name (Toyota, Honda) |
+| model | String | Model name (Camry, Civic) |
+| year | Int | Must be 1900 - current year + 1 |
+| color | String | Exterior color |
+| variant | String | Trim level (LE, SE, Sport) |
+| condition | Enum | EXCELLENT, GOOD, FAIR, POOR |
+
+### Optional (With Smart Defaults)
+
+These fields are optional in Excel mapping. If not mapped, defaults are applied:
+
+| Field | Type | Default Value |
+|-------|------|---------------|
+| vin | String | Auto-generated placeholder (TEMP...) |
+| price | Decimal | 0 |
+| mileage | Int | 0 |
+| bodyType | Enum | OTHER |
+| fuelType | Enum | OTHER |
+| transmission | Enum | OTHER |
+| drivetrain | Enum | FWD |
+| city | String | Seller's city |
+| country | String | Seller's country |
+| currency | String | USD |
+| registrationNo | String | null |
+| regionalSpecs | String | null |
+| engineSize | Float | null |
+| cylinders | Int | null |
+| horsepower | Int | null |
+| seatingCapacity | Int | null |
+| doors | Int | null |
+| description | String | null |
+| features | String[] | [] |
+
+### Enum Normalization
+
+The import process normalizes common variations to valid enum values:
+
+| Enum | Common Inputs → Normalized Value |
+|------|----------------------------------|
+| condition | "Excellent", "excellent" → EXCELLENT |
+| bodyType | "sedan", "Saloon" → SEDAN; "suv", "Crossover" → SUV |
+| fuelType | "Petrol", "Gas", "Gasoline" → PETROL; "EV" → ELECTRIC |
+| transmission | "Auto", "AT" → AUTOMATIC; "MT", "Stick" → MANUAL |
+| drivetrain | "4x4", "4WD" → FOUR_WD; "All Wheel Drive" → AWD |
 

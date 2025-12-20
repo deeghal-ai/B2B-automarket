@@ -51,13 +51,13 @@ After reading, tell me:
 ### After Each Task
 1. Summarize what was built
 2. Note any issues or TODOs
-3. Suggest what to update in .ai/ files
+3. Update in .ai/ files
 
 ---
 
 ## End of Session Protocol
 
-At the END of our session, you MUST help me update:
+At the END of our session, update:
 
 1. **`.ai/CONTEXT.md`**:
    - Update "Last Updated" date

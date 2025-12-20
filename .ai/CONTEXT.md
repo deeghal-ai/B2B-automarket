@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 20, 2024
-**Last Session Focus**: Foundation setup - Auth, layouts, basic pages
-**Current Phase**: Phase 1 Complete ✅ → Ready for Phase 2 (Seller Upload)
+**Last Session Focus**: Seller Upload P2 - Validation & Import implementation
+**Current Phase**: Phase 2 Complete (Seller Upload - P0, P1, P2 Done)
 
 ### What's Been Built
 
@@ -32,7 +32,15 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Cart store (Zustand + localStorage persistence)
 - [x] Cart page with seller grouping
 - [x] Add to cart functionality
-- [ ] Seller upload with column mapping
+- [x] Seller upload page with file dropzone (P0 complete)
+- [x] Excel/CSV parsing with xlsx library
+- [x] Data preview table (first 5 rows)
+- [x] Column mapping interface (P1 complete)
+- [x] Auto-detection of common column names
+- [x] Row-by-row validation with error display (P2 complete)
+- [x] Bulk import to database via Prisma (P2 complete)
+- [x] Import progress indicator and summary (P2 complete)
+- [ ] Save/load column mappings to database
 - [ ] Seller inventory management
 - [ ] Dynamic grouping for buyers
 - [ ] Checkout flow
@@ -51,14 +59,35 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Quick action buttons
    - Getting started checklist
 
-3. **Buyer Features**
+3. **Seller Upload (P0 + P1 + P2 Complete)**
+   - Drag-and-drop file upload for Excel/CSV
+   - File type validation (.xlsx, .xls, .csv)
+   - File size validation (max 10MB)
+   - Excel parsing with xlsx library
+   - Preview table showing first 5 rows
+   - Shows file info (name, size, row count, column count)
+   - 3-step wizard UI (Upload → Map Columns → Import)
+   - Column mapping interface with system fields on left, Excel column dropdowns on right
+   - Auto-detection of common column names (Brand→make, Model→model, etc.)
+   - Required fields: make, model, year, color, variant, condition (6 fields only)
+   - Validation prevents proceeding without required fields mapped
+   - Row-by-row validation with error display (row number, field, message)
+   - Collapsible validation errors panel grouped by row
+   - Enum normalization (condition, bodyType, fuelType, transmission, drivetrain)
+   - Auto-generated placeholder VINs for vehicles without VIN mapped
+   - Default values for unmapped optional fields (uses seller's city/country)
+   - Bulk import to database via Prisma createMany
+   - Import progress indicator
+   - Success/error summary with actions (Upload Another / Go to Inventory)
+
+4. **Buyer Features**
    - Browse page shows all published vehicles
    - Vehicle detail page with full specifications
    - Cart persists in localStorage
    - Cart groups items by seller
    - Add/remove from cart working
 
-4. **Shared Components**
+5. **Shared Components**
    - Header with role-based navigation
    - Cart badge with item count
    - Mobile responsive navigation
@@ -66,8 +95,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### What's Broken / Known Issues
 
 - Sign out redirect URL may need adjustment (currently redirects to Supabase URL)
-- No vehicles in database yet (need seller upload first)
 - Dynamic grouping not implemented yet (showing flat list)
+- Save/load column mappings not yet functional (UI exists, needs API routes)
 
 ---
 
@@ -82,33 +111,44 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 ```
 src/
-├── middleware.ts                    # Auth middleware
+├── types/
+│   └── upload.ts                   # UPDATED: Added ValidationError, TransformedVehicle, ImportState types
 ├── lib/
+│   ├── excel-parser.ts             # Excel/CSV parsing with xlsx
+│   ├── column-auto-detect.ts       # Auto-detect column name aliases
+│   ├── vehicle-validator.ts        # NEW: Row validation & transformation with enum normalization
 │   ├── prisma.ts                   # Prisma client singleton
 │   ├── utils.ts                    # Utility functions + enum labels
 │   └── supabase/
 │       ├── client.ts               # Browser Supabase client
 │       ├── server.ts               # Server Supabase client
 │       └── middleware.ts           # Session refresh logic
-├── types/index.ts                  # All TypeScript types
-├── stores/cart-store.ts            # Zustand cart store
 ├── components/
+│   ├── ui/
+│   │   ├── collapsible.tsx         # NEW: Simple collapsible component
+│   │   └── progress.tsx            # NEW: Progress bar component
+│   ├── seller/
+│   │   ├── upload-dropzone.tsx     # Drag-and-drop file upload
+│   │   ├── data-preview.tsx        # Preview table for parsed data
+│   │   ├── column-mapper.tsx       # Column mapping UI with dropdowns
+│   │   ├── validation-errors.tsx   # NEW: Collapsible error list grouped by row
+│   │   ├── import-progress.tsx     # NEW: Import progress with spinner
+│   │   └── import-summary.tsx      # NEW: Success/error summary with actions
 │   ├── shared/
 │   │   ├── header.tsx              # Main header with nav
 │   │   └── cart-badge.tsx          # Cart icon with count
 │   └── buyer/
 │       └── add-to-cart-button.tsx  # Add to cart button
 ├── app/
-│   ├── layout.tsx                  # Root layout with header
-│   ├── page.tsx                    # Landing page
-│   ├── login/page.tsx              # Login page
-│   ├── register/page.tsx           # Register with role selection
-│   ├── api/auth/
-│   │   ├── register/route.ts       # Create user in DB
-│   │   └── signout/route.ts        # Sign out
+│   ├── api/
+│   │   └── upload/
+│   │       ├── validate/route.ts   # NEW: POST validation endpoint
+│   │       └── import/route.ts     # NEW: POST import endpoint
 │   ├── seller/
 │   │   ├── layout.tsx              # Seller sidebar layout
-│   │   └── page.tsx                # Seller dashboard
+│   │   ├── page.tsx                # Seller dashboard
+│   │   └── upload/
+│   │       └── page.tsx            # UPDATED: Full 3-step wizard with validation & import
 │   └── buyer/
 │       ├── layout.tsx              # Buyer layout
 │       ├── page.tsx                # Browse vehicles
@@ -150,6 +190,7 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
 4. **Price shown as range**: Groups show min-max price with option to see per-unit
 5. **Zustand + localStorage for cart**: Fast local updates, persists across refreshes
 6. **Supabase for auth + storage**: Unified platform for MVP
+7. **Client-side Excel parsing**: Using xlsx library in browser for immediate feedback
 
 ---
 
@@ -158,7 +199,7 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
 ### Seller Flow
 1. ✅ Register as seller (with company details)
 2. ✅ View dashboard
-3. ⏳ Upload Excel → Map columns → Import
+3. ✅ Upload Excel → Map columns → Validate → Import (P0+P1+P2 complete)
 4. ⏳ Manage inventory (edit/publish/draft)
 5. ⏳ View orders
 
@@ -212,18 +253,74 @@ const items = useCartStore((state) => state.items);
 const isInCart = useCartStore((state) => state.isInCart(vehicleId));
 ```
 
+### Excel Parsing
+```typescript
+import { parseExcelFile, ParsedExcel } from '@/lib/excel-parser';
+
+const data: ParsedExcel = await parseExcelFile(file);
+// data.headers: string[]
+// data.rows: Record<string, unknown>[]
+// data.totalRows: number
+// data.fileName: string
+// data.fileSize: number
+```
+
+### Column Mapping
+```typescript
+import { autoDetectMapping } from '@/lib/column-auto-detect';
+import { ColumnMappingState, REQUIRED_VEHICLE_FIELDS } from '@/types/upload';
+
+// Auto-detect maps VehicleField → Excel header
+const mapping: ColumnMappingState = autoDetectMapping(headers);
+// mapping = { make: 'Brand', model: 'Model', year: 'Year', ... }
+
+// Required fields (must be mapped before import):
+// make, model, year, color, variant, condition
+```
+
+### Vehicle Validation & Import
+```typescript
+import { validateAndTransformRows } from '@/lib/vehicle-validator';
+
+// Client-side: Call validation API
+const response = await fetch('/api/upload/validate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ rows: parsedData.rows, mapping }),
+});
+const { validRows, errors, invalidRowCount } = await response.json();
+
+// Then import valid rows
+const importResponse = await fetch('/api/upload/import', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ vehicles: validRows }),
+});
+const { imported, failed } = await importResponse.json();
+```
+
 ---
 
 ## Next Session Should Focus On
 
-**Priority 1: Seller Excel Upload with Column Mapping**
-- This unlocks the entire marketplace (can't buy without inventory)
-- Spec file: `specs/features/seller-upload.md`
-- Key components: UploadDropzone, ColumnMapper, ImportProgress
-
-**Priority 2: Seller Inventory Management**
-- List, edit, publish/unpublish vehicles
+**Priority 1: Seller Inventory Management (Phase 3)**
+- Inventory list page (`/seller/inventory`)
+- Table with vehicle list, status badges, actions
+- Filter/search by make, model, VIN
+- Status toggle (Publish/Unpublish)
 - Spec file: `specs/features/seller-inventory.md`
+
+**Priority 2: Save/Load Column Mappings**
+- API routes: GET/POST/DELETE /api/mappings
+- Save mapping with custom name
+- Load saved mappings dropdown
+- Set default mapping option
+
+**Priority 3: Buyer Dynamic Grouping (MVP Core!)**
+- Grouping parameter selector
+- Dynamic GROUP BY API endpoint
+- Grouped listings view
+- Spec file: `specs/features/buyer-grouping.md`
 
 ---
 
@@ -237,3 +334,4 @@ const isInCart = useCartStore((state) => state.isInCart(vehicleId));
 - All database operations go through Prisma, not raw Supabase queries
 - The `xlsx` package is already installed for Excel parsing
 - Cart is client-side only (Zustand) - no server sync needed for MVP
+- Upload wizard uses client-side state management for multi-step flow
