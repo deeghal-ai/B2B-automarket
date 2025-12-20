@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 20, 2024
-**Last Session Focus**: Seller Upload P2 - Validation & Import implementation
-**Current Phase**: Phase 2 Complete (Seller Upload - P0, P1, P2 Done)
+**Last Session Focus**: Seller Inventory Management (Phase 3)
+**Current Phase**: Phase 3 Complete (Seller Inventory Management Done)
 
 ### What's Been Built
 
@@ -40,8 +40,11 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Row-by-row validation with error display (P2 complete)
 - [x] Bulk import to database via Prisma (P2 complete)
 - [x] Import progress indicator and summary (P2 complete)
+- [x] Seller inventory management page with table, filters, pagination
+- [x] Status toggle (Publish/Unpublish) per vehicle
+- [x] Bulk actions (publish/unpublish/delete selected)
+- [x] Delete single vehicle with confirmation
 - [ ] Save/load column mappings to database
-- [ ] Seller inventory management
 - [ ] Dynamic grouping for buyers
 - [ ] Checkout flow
 
@@ -92,6 +95,22 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Cart badge with item count
    - Mobile responsive navigation
 
+6. **Seller Inventory Management (Phase 3 Complete)**
+   - Inventory list page at `/seller/inventory`
+   - Table with: Checkbox, Image, Make/Model, Year, Price, VIN, Status, Actions
+   - Filter by status (All, Draft, Published, Sold)
+   - Search by make, model, or VIN (debounced)
+   - Pagination (50 items per page) with URL params
+   - Status toggle button (Publish/Unpublish) per vehicle
+   - Delete single vehicle with confirmation dialog
+   - Bulk selection with checkbox (select all / individual)
+   - Bulk actions: Publish, Unpublish, Delete selected
+   - API endpoints:
+     - GET /api/seller/vehicles (list with filters, pagination)
+     - PATCH /api/seller/vehicles/[id] (update status)
+     - DELETE /api/seller/vehicles/[id] (remove vehicle)
+     - POST /api/seller/vehicles/bulk (bulk publish/unpublish/delete)
+
 ### What's Broken / Known Issues
 
 - Sign out redirect URL may need adjustment (currently redirects to Supabase URL)
@@ -112,11 +131,12 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ```
 src/
 ├── types/
-│   └── upload.ts                   # UPDATED: Added ValidationError, TransformedVehicle, ImportState types
+│   ├── upload.ts                   # ValidationError, TransformedVehicle, ImportState types
+│   └── inventory.ts                # NEW: VehicleWithImage, VehiclesResponse, InventoryFiltersState types
 ├── lib/
 │   ├── excel-parser.ts             # Excel/CSV parsing with xlsx
 │   ├── column-auto-detect.ts       # Auto-detect column name aliases
-│   ├── vehicle-validator.ts        # NEW: Row validation & transformation with enum normalization
+│   ├── vehicle-validator.ts        # Row validation & transformation with enum normalization
 │   ├── prisma.ts                   # Prisma client singleton
 │   ├── utils.ts                    # Utility functions + enum labels
 │   └── supabase/
@@ -125,15 +145,20 @@ src/
 │       └── middleware.ts           # Session refresh logic
 ├── components/
 │   ├── ui/
-│   │   ├── collapsible.tsx         # NEW: Simple collapsible component
-│   │   └── progress.tsx            # NEW: Progress bar component
+│   │   ├── collapsible.tsx         # Simple collapsible component
+│   │   └── progress.tsx            # Progress bar component
 │   ├── seller/
 │   │   ├── upload-dropzone.tsx     # Drag-and-drop file upload
 │   │   ├── data-preview.tsx        # Preview table for parsed data
 │   │   ├── column-mapper.tsx       # Column mapping UI with dropdowns
-│   │   ├── validation-errors.tsx   # NEW: Collapsible error list grouped by row
-│   │   ├── import-progress.tsx     # NEW: Import progress with spinner
-│   │   └── import-summary.tsx      # NEW: Success/error summary with actions
+│   │   ├── validation-errors.tsx   # Collapsible error list grouped by row
+│   │   ├── import-progress.tsx     # Import progress with spinner
+│   │   ├── import-summary.tsx      # Success/error summary with actions
+│   │   ├── inventory-client.tsx    # NEW: Client wrapper for inventory with state management
+│   │   ├── inventory-table.tsx     # NEW: Data table with vehicle rows
+│   │   ├── inventory-filters.tsx   # NEW: Status filter + search input
+│   │   ├── status-toggle.tsx       # NEW: Publish/Unpublish button
+│   │   └── bulk-actions.tsx        # NEW: Bulk action buttons (publish/unpublish/delete)
 │   ├── shared/
 │   │   ├── header.tsx              # Main header with nav
 │   │   └── cart-badge.tsx          # Cart icon with count
@@ -141,14 +166,21 @@ src/
 │       └── add-to-cart-button.tsx  # Add to cart button
 ├── app/
 │   ├── api/
-│   │   └── upload/
-│   │       ├── validate/route.ts   # NEW: POST validation endpoint
-│   │       └── import/route.ts     # NEW: POST import endpoint
+│   │   ├── upload/
+│   │   │   ├── validate/route.ts   # POST validation endpoint
+│   │   │   └── import/route.ts     # POST import endpoint
+│   │   └── seller/
+│   │       └── vehicles/
+│   │           ├── route.ts        # NEW: GET list vehicles with filters/pagination
+│   │           ├── [id]/route.ts   # NEW: PATCH/DELETE single vehicle
+│   │           └── bulk/route.ts   # NEW: POST bulk actions
 │   ├── seller/
 │   │   ├── layout.tsx              # Seller sidebar layout
 │   │   ├── page.tsx                # Seller dashboard
-│   │   └── upload/
-│   │       └── page.tsx            # UPDATED: Full 3-step wizard with validation & import
+│   │   ├── upload/
+│   │   │   └── page.tsx            # Full 3-step wizard with validation & import
+│   │   └── inventory/
+│   │       └── page.tsx            # NEW: Inventory management page
 │   └── buyer/
 │       ├── layout.tsx              # Buyer layout
 │       ├── page.tsx                # Browse vehicles
@@ -200,8 +232,9 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
 1. ✅ Register as seller (with company details)
 2. ✅ View dashboard
 3. ✅ Upload Excel → Map columns → Validate → Import (P0+P1+P2 complete)
-4. ⏳ Manage inventory (edit/publish/draft)
-5. ⏳ View orders
+4. ✅ Manage inventory (list/filter/search/publish/delete) - Phase 3 complete
+5. ⏳ Edit vehicle details
+6. ⏳ View orders
 
 ### Buyer Flow
 1. ✅ Register as buyer
@@ -303,24 +336,22 @@ const { imported, failed } = await importResponse.json();
 
 ## Next Session Should Focus On
 
-**Priority 1: Seller Inventory Management (Phase 3)**
-- Inventory list page (`/seller/inventory`)
-- Table with vehicle list, status badges, actions
-- Filter/search by make, model, VIN
-- Status toggle (Publish/Unpublish)
-- Spec file: `specs/features/seller-inventory.md`
+**Priority 1: Buyer Dynamic Grouping (MVP Core!)**
+- Grouping parameter selector component
+- Dynamic GROUP BY API endpoint
+- Grouped listings view
+- Spec file: `specs/features/buyer-grouping.md`
 
-**Priority 2: Save/Load Column Mappings**
+**Priority 2: Edit Vehicle Form**
+- Edit vehicle modal or page
+- All fields editable
+- Validate before saving
+
+**Priority 3: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings
 - Save mapping with custom name
 - Load saved mappings dropdown
 - Set default mapping option
-
-**Priority 3: Buyer Dynamic Grouping (MVP Core!)**
-- Grouping parameter selector
-- Dynamic GROUP BY API endpoint
-- Grouped listings view
-- Spec file: `specs/features/buyer-grouping.md`
 
 ---
 

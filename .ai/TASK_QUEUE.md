@@ -87,20 +87,27 @@
 
 ---
 
-## Phase 3: Seller Inventory Management
+## ✅ Completed: Phase 3 - Seller Inventory Management
 
-### P1 - After Upload
-- [ ] Inventory list page (`/seller/inventory`)
-- [ ] Table with: Image, Make/Model, Year, Price, Status, Actions
-- [ ] Filter by status (Draft/Published/Sold)
-- [ ] Search by make, model, VIN
-- [ ] Pagination (50 items per page)
+### ✅ P1 - Complete (Inventory List)
+- [x] Inventory list page (`/seller/inventory`)
+- [x] Table with: Checkbox, Image, Make/Model, Year, Price, VIN, Status, Actions
+- [x] Filter by status (All/Draft/Published/Sold)
+- [x] Search by make, model, VIN (debounced)
+- [x] Pagination (50 items per page, URL-based)
+- [x] API endpoint: GET /api/seller/vehicles
 
-### P2 - Inventory Actions
+### ✅ P2 - Complete (Inventory Actions)
+- [x] Status toggle (Publish/Unpublish) per vehicle
+- [x] Bulk select + bulk actions (Publish/Unpublish/Delete)
+- [x] Delete vehicle (with confirmation dialog)
+- [x] API endpoints:
+  - [x] PATCH /api/seller/vehicles/[id]
+  - [x] DELETE /api/seller/vehicles/[id]
+  - [x] POST /api/seller/vehicles/bulk
+
+### P3 - Deferred
 - [ ] Edit vehicle modal/page
-- [ ] Status toggle (Publish/Unpublish)
-- [ ] Bulk select + bulk actions
-- [ ] Delete vehicle (with confirmation)
 - [ ] Image upload per vehicle (Supabase Storage)
 
 ---
@@ -192,4 +199,5 @@
 | Dec 20, 2024 | Seller Upload P0 | ✅ Upload page, dropzone, Excel parsing, data preview |
 | Dec 20, 2024 | Seller Upload P1 | ✅ Column mapping UI, auto-detect, validation, inverted field→header mapping |
 | Dec 20, 2024 | Seller Upload P2 | ✅ Row validation, enum normalization, bulk import, progress UI, summary |
-| Next session | Phase 3 | Seller inventory management OR buyer dynamic grouping |
+| Dec 20, 2024 | Phase 3 Inventory | ✅ Inventory list, filters, pagination, status toggle, bulk actions, delete |
+| Next session | Phase 4 | Buyer dynamic grouping (MVP Core!) |
