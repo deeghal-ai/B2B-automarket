@@ -48,13 +48,14 @@ export async function POST(request: Request) {
       validLimit
     );
 
+    // Build total vehicles query
+    const totalVehiclesQueryData = buildTotalVehiclesQuery(filters);
+
     // Execute queries in parallel
     const [rawListings, countResult, totalVehiclesResult] = await Promise.all([
       prisma.$queryRawUnsafe(query, ...params),
       prisma.$queryRawUnsafe(countQuery, ...params),
-      prisma.$queryRawUnsafe(
-        ...Object.values(buildTotalVehiclesQuery(filters))
-      ),
+      prisma.$queryRawUnsafe(totalVehiclesQueryData.query, ...totalVehiclesQueryData.params),
     ]);
 
     // Transform raw results to typed GroupedListing objects

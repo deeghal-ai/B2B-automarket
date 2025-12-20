@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 20, 2024
-**Last Session Focus**: Seller Inventory Management (Phase 3)
-**Current Phase**: Phase 3 Complete (Seller Inventory Management Done)
+**Last Session Focus**: Buyer Dynamic Grouping (Phase 4)
+**Current Phase**: Phase 4 Complete (Buyer Dynamic Grouping Done)
 
 ### What's Been Built
 
@@ -44,8 +44,13 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Status toggle (Publish/Unpublish) per vehicle
 - [x] Bulk actions (publish/unpublish/delete selected)
 - [x] Delete single vehicle with confirmation
+- [x] Dynamic grouping API endpoint (POST /api/vehicles/grouped)
+- [x] Vehicle by IDs API endpoint (POST /api/vehicles/by-ids)
+- [x] Grouping selector UI component
+- [x] Grouped listing cards with expand/collapse
+- [x] Vehicle selection list with bulk add to cart
+- [x] Buyer browse page with dynamic grouping
 - [ ] Save/load column mappings to database
-- [ ] Dynamic grouping for buyers
 - [ ] Checkout flow
 
 ### What's Working
@@ -83,8 +88,15 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Import progress indicator
    - Success/error summary with actions (Upload Another / Go to Inventory)
 
-4. **Buyer Features**
-   - Browse page shows all published vehicles
+4. **Buyer Features (Phase 4 Complete)**
+   - Browse page with dynamic grouping
+   - Grouping parameter selector (Make, Model, Variant, Year, Color, Condition, Body Type)
+   - Grouped listings showing unit count, price range, mileage range
+   - Expand groups to see individual vehicles
+   - Select individual vehicles or "Select All" within group
+   - Bulk add to cart from groups
+   - Grouping preference saved to localStorage
+   - URL-based state for shareable/bookmarkable views
    - Vehicle detail page with full specifications
    - Cart persists in localStorage
    - Cart groups items by seller
@@ -114,7 +126,6 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### What's Broken / Known Issues
 
 - Sign out redirect URL may need adjustment (currently redirects to Supabase URL)
-- Dynamic grouping not implemented yet (showing flat list)
 - Save/load column mappings not yet functional (UI exists, needs API routes)
 
 ---
@@ -132,11 +143,13 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 src/
 ├── types/
 │   ├── upload.ts                   # ValidationError, TransformedVehicle, ImportState types
-│   └── inventory.ts                # NEW: VehicleWithImage, VehiclesResponse, InventoryFiltersState types
+│   ├── inventory.ts                # VehicleWithImage, VehiclesResponse, InventoryFiltersState types
+│   └── grouping.ts                 # NEW: GroupingField, GroupedListing, request/response types
 ├── lib/
 │   ├── excel-parser.ts             # Excel/CSV parsing with xlsx
 │   ├── column-auto-detect.ts       # Auto-detect column name aliases
 │   ├── vehicle-validator.ts        # Row validation & transformation with enum normalization
+│   ├── grouping-query.ts           # NEW: Dynamic SQL query builder for grouping
 │   ├── prisma.ts                   # Prisma client singleton
 │   ├── utils.ts                    # Utility functions + enum labels
 │   └── supabase/
@@ -163,17 +176,24 @@ src/
 │   │   ├── header.tsx              # Main header with nav
 │   │   └── cart-badge.tsx          # Cart icon with count
 │   └── buyer/
-│       └── add-to-cart-button.tsx  # Add to cart button
+│       ├── add-to-cart-button.tsx  # Add to cart button
+│       ├── grouping-selector.tsx   # NEW: Checkbox UI for selecting grouping params
+│       ├── grouped-listing-card.tsx # NEW: Card for each grouped listing
+│       ├── vehicle-selection-list.tsx # NEW: Expandable list within group
+│       └── buyer-browse-client.tsx # NEW: Client wrapper for browse page
 ├── app/
 │   ├── api/
 │   │   ├── upload/
 │   │   │   ├── validate/route.ts   # POST validation endpoint
 │   │   │   └── import/route.ts     # POST import endpoint
-│   │   └── seller/
-│   │       └── vehicles/
-│   │           ├── route.ts        # NEW: GET list vehicles with filters/pagination
-│   │           ├── [id]/route.ts   # NEW: PATCH/DELETE single vehicle
-│   │           └── bulk/route.ts   # NEW: POST bulk actions
+│   │   ├── seller/
+│   │   │   └── vehicles/
+│   │   │       ├── route.ts        # GET list vehicles with filters/pagination
+│   │   │       ├── [id]/route.ts   # PATCH/DELETE single vehicle
+│   │   │       └── bulk/route.ts   # POST bulk actions
+│   │   └── vehicles/
+│   │       ├── grouped/route.ts    # NEW: POST dynamic grouping endpoint
+│   │       └── by-ids/route.ts     # NEW: POST fetch vehicles by IDs
 │   ├── seller/
 │   │   ├── layout.tsx              # Seller sidebar layout
 │   │   ├── page.tsx                # Seller dashboard
@@ -238,13 +258,14 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
 
 ### Buyer Flow
 1. ✅ Register as buyer
-2. ✅ Browse vehicles (flat list for now)
-3. ⏳ Select grouping parameters
-4. ⏳ Browse grouped listings
-5. ✅ View vehicle details
-6. ✅ Add to cart
-7. ✅ View cart
-8. ⏳ Checkout
+2. ✅ Browse vehicles with dynamic grouping
+3. ✅ Select grouping parameters (Make, Model, Year, etc.)
+4. ✅ Browse grouped listings (expand to see individual vehicles)
+5. ✅ Bulk select vehicles from groups
+6. ✅ View vehicle details
+7. ✅ Add to cart (single or bulk)
+8. ✅ View cart
+9. ⏳ Checkout
 
 ---
 
@@ -332,22 +353,54 @@ const importResponse = await fetch('/api/upload/import', {
 const { imported, failed } = await importResponse.json();
 ```
 
+### Dynamic Grouping API
+```typescript
+// Fetch grouped listings
+const response = await fetch('/api/vehicles/grouped', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    groupBy: ['make', 'model', 'year'],
+    filters: { minPrice: 10000, maxPrice: 50000 },
+    page: 1,
+    limit: 20,
+  }),
+});
+const { listings, pagination, totalVehicles } = await response.json();
+
+// Fetch vehicles by IDs (for group expansion)
+const vehiclesResponse = await fetch('/api/vehicles/by-ids', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ vehicleIds: ['id1', 'id2'] }),
+});
+const vehicles = await vehiclesResponse.json();
+```
+
 ---
 
 ## Next Session Should Focus On
 
-**Priority 1: Buyer Dynamic Grouping (MVP Core!)**
-- Grouping parameter selector component
-- Dynamic GROUP BY API endpoint
-- Grouped listings view
-- Spec file: `specs/features/buyer-grouping.md`
+**Priority 1: Search & Filters for Grouping (Phase 4 P2)**
+- Search by keyword (make, model)
+- Filter by price range
+- Filter by year range
+- Filter by mileage range
+- Filter by country
 
-**Priority 2: Edit Vehicle Form**
+**Priority 2: Checkout Flow (Phase 5)**
+- Checkout page with order summary
+- Contact/notes field
+- Submit inquiry (create order)
+- Order confirmation page
+- Spec file: `specs/features/buyer-cart.md`
+
+**Priority 3: Edit Vehicle Form**
 - Edit vehicle modal or page
 - All fields editable
 - Validate before saving
 
-**Priority 3: Save/Load Column Mappings**
+**Priority 4: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings
 - Save mapping with custom name
 - Load saved mappings dropdown

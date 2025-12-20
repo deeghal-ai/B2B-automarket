@@ -112,29 +112,29 @@
 
 ---
 
-## Phase 4: Buyer Dynamic Grouping (MVP Core!)
+## ✅ Completed: Phase 4 - Buyer Dynamic Grouping (MVP Core!)
 
-### P0 - Core Feature
-- [ ] Grouping parameter selector component
-  - [ ] Checkboxes: Make, Model, Variant, Year, Color, Condition, Body Type
-  - [ ] Apply Grouping button
-  - [ ] Save preference to localStorage
-- [ ] Dynamic grouping API endpoint
-  - [ ] Build GROUP BY query from selected params
-  - [ ] Return: count, price range, seller info, vehicle IDs
-  - [ ] Pagination support
-- [ ] Grouped listings view
-  - [ ] Card per group showing summary
-  - [ ] Seller info on each card
-  - [ ] Unit count badge
-  - [ ] Price range display
+### ✅ P0 - Core Feature (Complete)
+- [x] Grouping parameter selector component
+  - [x] Checkboxes: Make, Model, Variant, Year, Color, Condition, Body Type
+  - [x] Apply Grouping button
+  - [x] Save preference to localStorage
+- [x] Dynamic grouping API endpoint
+  - [x] Build GROUP BY query from selected params
+  - [x] Return: count, price range, seller info, vehicle IDs
+  - [x] Pagination support
+- [x] Grouped listings view
+  - [x] Card per group showing summary
+  - [x] Seller info on each card
+  - [x] Unit count badge
+  - [x] Price range display
 
-### P1 - Group Expansion
-- [ ] Expand group to see individual units
-- [ ] Show vehicle cards within group
-- [ ] Checkbox selection per vehicle
-- [ ] "Select All" for group
-- [ ] Bulk add to cart from group
+### ✅ P1 - Group Expansion (Complete)
+- [x] Expand group to see individual units
+- [x] Show vehicle cards within group
+- [x] Checkbox selection per vehicle
+- [x] "Select All" for group
+- [x] Bulk add to cart from group
 
 ### P2 - Search & Filters
 - [ ] Search by keyword (make, model)
@@ -200,4 +200,5 @@
 | Dec 20, 2024 | Seller Upload P1 | ✅ Column mapping UI, auto-detect, validation, inverted field→header mapping |
 | Dec 20, 2024 | Seller Upload P2 | ✅ Row validation, enum normalization, bulk import, progress UI, summary |
 | Dec 20, 2024 | Phase 3 Inventory | ✅ Inventory list, filters, pagination, status toggle, bulk actions, delete |
-| Next session | Phase 4 | Buyer dynamic grouping (MVP Core!) |
+| Dec 20, 2024 | Phase 4 Grouping | ✅ Dynamic grouping API, grouping UI, grouped listings, group expansion, bulk cart |
+| Next session | Phase 4 P2 / Phase 5 | Search & filters, or checkout flow |

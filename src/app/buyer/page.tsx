@@ -1,106 +1,56 @@
-import { prisma } from '@/lib/prisma';
+import { Suspense } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { formatPrice, formatMileage } from '@/lib/utils';
+import { BuyerBrowseClient } from '@/components/buyer/buyer-browse-client';
 
-export default async function BuyerBrowsePage() {
-  // For now, just show all published vehicles
-  // We'll add dynamic grouping next
-  const vehicles = await prisma.vehicle.findMany({
-    where: { status: 'PUBLISHED' },
-    include: {
-      seller: true,
-      images: {
-        where: { isPrimary: true },
-        take: 1,
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 50,
-  });
-
-  const vehicleCount = await prisma.vehicle.count({
-    where: { status: 'PUBLISHED' },
-  });
-
+export default function BuyerBrowsePage() {
   return (
     <div>
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Browse Vehicles</h1>
         <p className="text-muted-foreground">
-          {vehicleCount} vehicles available
+          Select grouping parameters to find bulk purchase opportunities
         </p>
       </div>
 
-      {/* Placeholder for grouping controls - coming next */}
-      <Card className="mb-6 bg-muted/50">
-        <CardContent className="py-4">
-          <p className="text-sm text-muted-foreground">
-            🚧 Dynamic grouping controls coming soon! For now, showing all vehicles.
-          </p>
-        </CardContent>
-      </Card>
-
-      {vehicles.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              No vehicles available yet. Check back soon!
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {vehicles.map((vehicle) => (
-            <Link key={vehicle.id} href={`/buyer/vehicle/${vehicle.id}`}>
-              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
-                <CardContent className="p-4">
-                  {/* Image placeholder */}
-                  <div className="aspect-video bg-muted rounded-md mb-3 flex items-center justify-center">
-                    {vehicle.images[0] ? (
-                      <img
-                        src={vehicle.images[0].url}
-                        alt={`${vehicle.make} ${vehicle.model}`}
-                        className="w-full h-full object-cover rounded-md"
-                      />
-                    ) : (
-                      <span className="text-4xl">🚗</span>
-                    )}
+      <Suspense
+        fallback={
+          <div className="space-y-6">
+            {/* Grouping selector skeleton */}
+            <Card className="border-dashed">
+              <CardContent className="py-4">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-4 bg-muted rounded w-32" />
+                  <div className="flex gap-4">
+                    {[...Array(7)].map((_, i) => (
+                      <div key={i} className="h-5 bg-muted rounded w-20" />
+                    ))}
                   </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                  <div className="space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">
-                          {vehicle.make} {vehicle.model} {vehicle.variant}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {vehicle.year} • {vehicle.color}
-                        </p>
+            {/* Listings skeleton */}
+            <div className="grid gap-4">
+              {[...Array(3)].map((_, i) => (
+                <Card key={i}>
+                  <CardContent className="p-4">
+                    <div className="flex gap-4 animate-pulse">
+                      <div className="w-24 h-24 bg-muted rounded-lg" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-5 bg-muted rounded w-1/3" />
+                        <div className="h-4 bg-muted rounded w-1/4" />
+                        <div className="h-4 bg-muted rounded w-1/2" />
                       </div>
-                      <Badge variant="secondary">{vehicle.condition}</Badge>
                     </div>
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        {formatMileage(vehicle.mileage)}
-                      </span>
-                      <span className="font-bold text-lg">
-                        {formatPrice(Number(vehicle.price), vehicle.currency)}
-                      </span>
-                    </div>
-
-                    <p className="text-xs text-muted-foreground">
-                      {vehicle.seller.companyName} • {vehicle.seller.city}, {vehicle.seller.country}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        }
+      >
+        <BuyerBrowseClient />
+      </Suspense>
     </div>
   );
 }
