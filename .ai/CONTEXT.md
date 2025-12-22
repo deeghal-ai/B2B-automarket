@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Price/Incoterm/Inspection Upload Fields + RFQ Display
-**Current Phase**: Phase 4 Complete + Upload Enhancements
+**Last Session Focus**: Vehicle Image Upload
+**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload
 
 ### What's Been Built
 
@@ -44,6 +44,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Status toggle (Publish/Unpublish) per vehicle
 - [x] Bulk actions (publish/unpublish/delete selected)
 - [x] Delete single vehicle with confirmation
+- [x] Edit vehicle page with full form and validation
+- [x] Vehicle image upload with Supabase Storage
 - [x] Dynamic grouping API endpoint (POST /api/vehicles/grouped)
 - [x] Vehicle by IDs API endpoint (POST /api/vehicles/by-ids)
 - [x] Grouping selector UI component
@@ -131,7 +133,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Cart badge with item count
    - Mobile responsive navigation
 
-6. **Seller Inventory Management (Phase 3 Complete)**
+6. **Seller Inventory Management (Phase 3 Complete + Edit)**
    - Inventory list page at `/seller/inventory`
    - Table with: Checkbox, Image, Make/Model, Year, Price, VIN, Status, Actions
    - Filter by status (All, Draft, Published, Sold)
@@ -141,11 +143,27 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Delete single vehicle with confirmation dialog
    - Bulk selection with checkbox (select all / individual)
    - Bulk actions: Publish, Unpublish, Delete selected
+   - **Edit vehicle page** at `/seller/vehicle/[id]/edit`:
+     - All fields editable in organized sections (Basic Info, Specifications, Engine, Details, Location, Pricing, Additional)
+     - Client-side validation for required fields
+     - Server-side validation with VIN uniqueness check
+     - Price/currency/incoterm relationship validation
+     - Success redirect to inventory after save
+   - **Image upload** using Supabase Storage:
+     - Drag-and-drop or click to upload (JPEG, PNG, WebP)
+     - Max 10 images per vehicle, 5MB per image
+     - Set primary image (shown in listings)
+     - Delete images with confirmation
+     - Upload progress indicator
    - API endpoints:
      - GET /api/seller/vehicles (list with filters, pagination)
-     - PATCH /api/seller/vehicles/[id] (update status)
+     - PATCH /api/seller/vehicles/[id] (update status OR full vehicle update)
      - DELETE /api/seller/vehicles/[id] (remove vehicle)
      - POST /api/seller/vehicles/bulk (bulk publish/unpublish/delete)
+     - POST /api/seller/vehicles/[id]/images (upload image)
+     - GET /api/seller/vehicles/[id]/images (list images)
+     - PATCH /api/seller/vehicles/[id]/images/[imageId] (set primary)
+     - DELETE /api/seller/vehicles/[id]/images/[imageId] (delete image)
 
 ### What's Broken / Known Issues
 
@@ -195,8 +213,10 @@ src/
 │   │   ├── inventory-client.tsx    # NEW: Client wrapper for inventory with state management
 │   │   ├── inventory-table.tsx     # NEW: Data table with vehicle rows
 │   │   ├── inventory-filters.tsx   # NEW: Status filter + search input
-│   │   ├── status-toggle.tsx       # NEW: Publish/Unpublish button
-│   │   └── bulk-actions.tsx        # NEW: Bulk action buttons (publish/unpublish/delete)
+│   │   ├── status-toggle.tsx       # Publish/Unpublish button
+│   │   ├── bulk-actions.tsx        # Bulk action buttons (publish/unpublish/delete)
+│   │   ├── vehicle-edit-form.tsx   # Edit form with all vehicle fields
+│   │   └── vehicle-image-upload.tsx # NEW: Image upload with dropzone and grid
 │   ├── shared/
 │   │   ├── header.tsx              # Main header with nav
 │   │   └── cart-badge.tsx          # Cart icon with count
@@ -215,7 +235,11 @@ src/
 │   │   ├── seller/
 │   │   │   └── vehicles/
 │   │   │       ├── route.ts        # GET list vehicles with filters/pagination
-│   │   │       ├── [id]/route.ts   # PATCH/DELETE single vehicle
+│   │   │       ├── [id]/
+│   │   │       │   ├── route.ts    # PATCH (status OR full update) / DELETE single vehicle
+│   │   │       │   └── images/
+│   │   │       │       ├── route.ts       # NEW: POST upload / GET list images
+│   │   │       │       └── [imageId]/route.ts # NEW: PATCH set primary / DELETE image
 │   │   │       └── bulk/route.ts   # POST bulk actions
 │   │   └── vehicles/
 │   │       ├── grouped/route.ts    # NEW: POST dynamic grouping endpoint
@@ -225,8 +249,11 @@ src/
 │   │   ├── page.tsx                # Seller dashboard
 │   │   ├── upload/
 │   │   │   └── page.tsx            # Full 3-step wizard with validation & import
-│   │   └── inventory/
-│   │       └── page.tsx            # NEW: Inventory management page
+│   │   ├── inventory/
+│   │   │   └── page.tsx            # Inventory management page
+│   │   └── vehicle/
+│   │       └── [id]/
+│   │           └── edit/page.tsx   # NEW: Edit vehicle page
 │   └── buyer/
 │       ├── layout.tsx              # Buyer layout
 │       ├── page.tsx                # Browse vehicles
@@ -279,7 +306,7 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
 2. ✅ View dashboard
 3. ✅ Upload Excel → Map columns → Validate → Import (P0+P1+P2 complete)
 4. ✅ Manage inventory (list/filter/search/publish/delete) - Phase 3 complete
-5. ⏳ Edit vehicle details
+5. ✅ Edit vehicle details - Phase 3 P3 complete
 6. ⏳ View orders
 
 ### Buyer Flow
@@ -426,18 +453,13 @@ const vehicles = await vehiclesResponse.json();
 - Order confirmation page
 - Spec file: `specs/features/buyer-cart.md`
 
-**Priority 2: Edit Vehicle Form**
-- Edit vehicle modal or page
-- All fields editable
-- Validate before saving
-
-**Priority 3: Save/Load Column Mappings**
+**Priority 2: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings
 - Save mapping with custom name
 - Load saved mappings dropdown
 - Set default mapping option
 
-**Priority 4: Order Management**
+**Priority 3: Order Management**
 - Buyer order history
 - Seller incoming orders view
 - Order status updates

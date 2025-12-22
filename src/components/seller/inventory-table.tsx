@@ -24,7 +24,8 @@ import { StatusToggle } from './status-toggle';
 import { VehicleWithImage } from '@/types/inventory';
 import { VehicleStatus } from '@prisma/client';
 import { formatPrice, truncateVin, vehicleStatusLabels } from '@/lib/utils';
-import { Trash2, Loader2, Car, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Trash2, Loader2, Car, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import Link from 'next/link';
 
 interface InventoryTableProps {
   vehicles: VehicleWithImage[];
@@ -204,6 +205,11 @@ export function InventoryTable({
                         currentStatus={vehicle.status}
                         onStatusChange={onStatusChange}
                       />
+                      <Link href={`/seller/vehicle/${vehicle.id}/edit`}>
+                        <Button variant="ghost" size="sm">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"

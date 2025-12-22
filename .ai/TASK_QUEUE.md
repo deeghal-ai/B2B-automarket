@@ -106,9 +106,15 @@
   - [x] DELETE /api/seller/vehicles/[id]
   - [x] POST /api/seller/vehicles/bulk
 
-### P3 - Deferred
-- [ ] Edit vehicle modal/page
-- [ ] Image upload per vehicle (Supabase Storage)
+### ✅ P3 - Complete (Edit Vehicle)
+- [x] Edit vehicle page (`/seller/vehicle/[id]/edit`)
+- [x] PATCH API supports full vehicle updates
+- [x] Edit button in inventory table
+
+### ✅ P4 - Complete (Image Upload)
+- [x] Image upload per vehicle (Supabase Storage)
+- [x] Set primary image functionality
+- [x] Delete images with storage cleanup
 
 ---
 
@@ -216,4 +222,6 @@
 | Dec 21, 2024 | Upload Pricing Enhancement | ✅ Nullable price (RFQ), incoterm field, inspection link, conditional currency/incoterm UI |
 | Dec 22, 2024 | RFQ Display + Condition Aliases | ✅ formatPrice shows "RFQ" for $0, condition accepts A/B/C/D grades |
 | Dec 22, 2024 | Incoterm Badge Display | ✅ Incoterm (FOB/CIF) badge shown next to prices on all buyer pages |
+| Dec 22, 2024 | Edit Vehicle | ✅ Edit page, form with sections, PATCH API, inventory edit button |
+| Dec 22, 2024 | Image Upload | ✅ Supabase Storage upload, set primary, delete, dropzone UI |
 | Next session | Phase 5 Checkout | Checkout flow, order management |
