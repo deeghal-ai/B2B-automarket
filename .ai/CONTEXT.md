@@ -12,7 +12,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Grouped/Flat View Toggle for Browse Page
+**Last Session Focus**: Inspection Report Bug Fixes (Prisma relations, Puppeteer for JS-rendered pages)
 **Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports + Cart UX + View Toggle
 
 ### What's Been Built
@@ -161,9 +161,11 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Mobile responsive navigation
 
 8. **Inspection Report Feature**
-   - Scrapes Chinese inspection reports (Chaboshi 查博士) using HTTP fetch + OpenAI
-   - GPT-4o-mini parses HTML content and extracts: grade (A-E), scores, conclusions
+   - Scrapes Chinese inspection reports (Chaboshi 查博士) using Puppeteer + OpenAI
+   - **Puppeteer-core** renders JavaScript-heavy Vue.js pages before extraction
+   - GPT-4o-mini parses rendered HTML content and extracts: grade (A-E), scores, conclusions
    - Results cached in InspectionReport database table
+   - Validation prevents saving if OpenAI fails to extract required data (overallGrade)
    - Clean UI with grade letter, green checkmarks for "No Damage" status
    - "View Full Report" button links to original Chinese report
    - API: GET/POST /api/inspection/[vehicleId]
@@ -245,10 +247,14 @@ src/components/buyer/vehicle-selection-list.tsx # Added "In Cart" badges, "X alr
 # Inspection Report Feature (Dec 22, 2024)
 prisma/schema.prisma                          # Added InspectionReport model
 src/types/inspection.ts                       # NEW: TypeScript types for inspection data
-src/lib/inspection-scraper.ts                 # NEW: HTTP fetch + OpenAI GPT-4o-mini scraper (no Puppeteer)
-src/app/api/inspection/[vehicleId]/route.ts   # NEW: GET/POST API with caching
-src/components/buyer/inspection-report-card.tsx # NEW: Inspection report UI component (green checkmark design)
+src/lib/inspection-scraper.ts                 # Puppeteer + OpenAI GPT-4o-mini scraper (renders JS pages)
+src/app/api/inspection/[vehicleId]/route.ts   # GET/POST API with caching + validation
+src/components/buyer/inspection-report-card.tsx # Inspection report UI component (green checkmark design)
 src/app/buyer/vehicle/[id]/page.tsx           # Added InspectionReportCard integration
+
+# Inspection Report Bug Fixes (Dec 22, 2024)
+src/app/api/inspection/[vehicleId]/route.ts   # Fixed Prisma relation syntax (vehicle: { connect: {} })
+src/lib/inspection-scraper.ts                 # Added Puppeteer-core for JS-rendered pages, Chrome path detection
 
 # Design Refresh (Dec 22, 2024)
 src/app/globals.css                    # Updated CSS variables: dark navy primary, teal stock, green success
@@ -363,8 +369,14 @@ OPENAI_API_KEY=
   "@tanstack/react-query": "latest",
   "xlsx": "latest",
   "zustand": "latest",
-  "openai": "^4.73.0"
+  "openai": "^4.73.0",
+  "puppeteer-core": "latest"
 }
+```
+
+**Note**: Puppeteer-core requires Chrome/Chromium installed on the system. On Linux/WSL:
+```bash
+sudo apt install chromium-browser -y
 ```
 
 ---
