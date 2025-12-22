@@ -223,5 +223,6 @@
 | Dec 22, 2024 | RFQ Display + Condition Aliases | ✅ formatPrice shows "RFQ" for $0, condition accepts A/B/C/D grades |
 | Dec 22, 2024 | Incoterm Badge Display | ✅ Incoterm (FOB/CIF) badge shown next to prices on all buyer pages |
 | Dec 22, 2024 | Edit Vehicle | ✅ Edit page, form with sections, PATCH API, inventory edit button |
-| Dec 22, 2024 | Image Upload | ✅ Supabase Storage upload, set primary, delete, dropzone UI |
+| Dec 22, 2024 | Image Upload | ✅ Supabase Storage upload, set primary, delete, dropzone UI, race condition fix |
+| Dec 22, 2024 | AD Ports Design Refresh | ✅ Dark navy buttons, teal stock badges, polished UI - functionality preserved |
 | Next session | Phase 5 Checkout | Checkout flow, order management |

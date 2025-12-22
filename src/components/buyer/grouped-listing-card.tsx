@@ -150,8 +150,8 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
       : `Add All (${listing.unitCount}) to Cart`;
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
+    <Card className="hover:shadow-lg transition-shadow border-border/50">
+      <CardContent className="p-5">
         <div className="flex gap-4">
           {/* Image placeholder */}
           <div className="w-24 h-24 bg-muted rounded-lg flex-shrink-0 flex items-center justify-center">
@@ -168,7 +168,7 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
                   <span className="truncate">{listing.sellerName}</span>
                 </div>
               </div>
-              <Badge variant="secondary" className="flex-shrink-0">
+              <Badge variant="stock" className="flex-shrink-0">
                 {listing.unitCount} {listing.unitCount === 1 ? 'unit' : 'units'}
               </Badge>
             </div>
@@ -230,7 +230,7 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
                 size="sm"
                 onClick={handleAddToCart}
                 disabled={isAddingToCart || addedCount !== null}
-                className={addedCount !== null ? 'bg-green-600 hover:bg-green-600' : ''}
+                className={addedCount !== null ? 'bg-success hover:bg-success' : ''}
               >
                 {addedCount !== null ? (
                   <>

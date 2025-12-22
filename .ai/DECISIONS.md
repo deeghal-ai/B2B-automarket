@@ -297,6 +297,25 @@
 
 ---
 
+### [DECISION-018] AD Ports Design System Reference
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: The default shadcn/ui styling looked generic. User wanted a more professional, polished B2B marketplace aesthetic.
+**Decision**: Adopt visual styling inspired by AD Ports Group automotive marketplace.
+**Rationale**:
+- Professional dark navy primary color conveys trust
+- Teal stock badges clearly indicate inventory availability
+- Clean card shadows and refined borders improve visual hierarchy
+- Consistent with established B2B automotive marketplaces
+- Styling only - no functionality changes, no hardcoded features
+**Consequences**:
+- Added CSS variables: `--primary` (navy), `--stock` (teal), `--success` (green)
+- Added badge variants: `stock` and `success` in badge.tsx
+- Existing dynamic functionality (unit counts, grouping) preserved exactly
+- Features not in our data model (seller ratings, verified badges) NOT added
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

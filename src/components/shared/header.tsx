@@ -23,10 +23,10 @@ export function Header({ user }: HeaderProps) {
 
   if (isAuthPage) {
     return (
-      <header className="border-b">
+      <header className="border-b bg-card shadow-sm">
         <div className="container mx-auto px-4 h-16 flex items-center">
-          <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-            <Car className="h-6 w-6" />
+          <Link href="/" className="flex items-center gap-2.5 font-bold text-xl text-foreground">
+            <Car className="h-6 w-6 text-primary" />
             <span>AutoMarket B2B</span>
           </Link>
         </div>
@@ -35,39 +35,39 @@ export function Header({ user }: HeaderProps) {
   }
 
   return (
-    <header className="border-b bg-background sticky top-0 z-50">
+    <header className="border-b bg-card shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl">
-          <Car className="h-6 w-6" />
+        <Link href="/" className="flex items-center gap-2.5 font-bold text-xl text-foreground hover:text-primary transition-colors">
+          <Car className="h-6 w-6 text-primary" />
           <span className="hidden sm:inline">AutoMarket B2B</span>
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-8">
           {user ? (
             <>
               {user.role === 'SELLER' ? (
                 <>
                   <Link
                     href="/seller"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === '/seller' ? 'text-primary' : 'text-muted-foreground'
+                    className={`text-sm font-medium transition-colors hover:text-foreground ${
+                      pathname === '/seller' ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   >
                     Dashboard
                   </Link>
                   <Link
                     href="/seller/upload"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === '/seller/upload' ? 'text-primary' : 'text-muted-foreground'
+                    className={`text-sm font-medium transition-colors hover:text-foreground ${
+                      pathname === '/seller/upload' ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   >
                     Upload
                   </Link>
                   <Link
                     href="/seller/inventory"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === '/seller/inventory' ? 'text-primary' : 'text-muted-foreground'
+                    className={`text-sm font-medium transition-colors hover:text-foreground ${
+                      pathname === '/seller/inventory' ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   >
                     Inventory
@@ -77,8 +77,8 @@ export function Header({ user }: HeaderProps) {
                 <>
                   <Link
                     href="/buyer"
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
-                      pathname === '/buyer' ? 'text-primary' : 'text-muted-foreground'
+                    className={`text-sm font-medium transition-colors hover:text-foreground ${
+                      pathname === '/buyer' ? 'text-foreground' : 'text-muted-foreground'
                     }`}
                   >
                     Browse

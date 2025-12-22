@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Vehicle Image Upload
-**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload
+**Last Session Focus**: AD Ports Design Refresh
+**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh
 
 ### What's Been Built
 
@@ -52,6 +52,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Grouped listing cards with expand/collapse
 - [x] Vehicle selection list with bulk add to cart
 - [x] Buyer browse page with dynamic grouping
+- [x] AD Ports design refresh (styling only, functionality preserved)
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -133,6 +134,13 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Cart badge with item count
    - Mobile responsive navigation
 
+7. **Design System (AD Ports Refresh)**
+   - Dark navy primary color (#1e293b via oklch)
+   - Teal stock badges for unit counts
+   - Green success badges for published status
+   - Clean card shadows and refined borders
+   - Polished filter bar and navigation
+
 6. **Seller Inventory Management (Phase 3 Complete + Edit)**
    - Inventory list page at `/seller/inventory`
    - Table with: Checkbox, Image, Make/Model, Year, Price, VIN, Status, Actions
@@ -155,6 +163,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - Set primary image (shown in listings)
      - Delete images with confirmation
      - Upload progress indicator
+     - Race condition fix: uses transaction for parallel uploads
+     - UI handles multiple primary images gracefully
    - API endpoints:
      - GET /api/seller/vehicles (list with filters, pagination)
      - PATCH /api/seller/vehicles/[id] (update status OR full vehicle update)
@@ -169,6 +179,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 - Sign out redirect URL may need adjustment (currently redirects to Supabase URL)
 - Save/load column mappings not yet functional (UI exists, needs API routes)
+- **Supabase Storage requires RLS policies** - see `supabase/storage-policies.sql`
 
 ---
 
@@ -183,6 +194,16 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### Key Files Modified Recently
 
 ```
+# Design Refresh (Dec 22, 2024)
+src/app/globals.css                    # Updated CSS variables: dark navy primary, teal stock, green success
+src/components/ui/button.tsx           # Refined button variants with shadow-sm
+src/components/ui/badge.tsx            # Added stock and success badge variants
+src/components/buyer/grouped-listing-card.tsx  # Stock badge for unit counts
+src/components/buyer/search-filters.tsx        # Polished filter bar styling
+src/components/seller/inventory-table.tsx      # Success badge for published status
+src/components/shared/header.tsx               # Refined nav styling
+src/app/page.tsx                               # Updated landing page hero
+
 src/
 ├── types/
 │   ├── upload.ts                   # ValidationError, TransformedVehicle, ImportState types
@@ -216,7 +237,9 @@ src/
 │   │   ├── status-toggle.tsx       # Publish/Unpublish button
 │   │   ├── bulk-actions.tsx        # Bulk action buttons (publish/unpublish/delete)
 │   │   ├── vehicle-edit-form.tsx   # Edit form with all vehicle fields
-│   │   └── vehicle-image-upload.tsx # NEW: Image upload with dropzone and grid
+│   │   └── vehicle-image-upload.tsx # Image upload with dropzone and grid
+supabase/
+└── storage-policies.sql            # NEW: RLS policies for vehicle-images bucket
 │   ├── shared/
 │   │   ├── header.tsx              # Main header with nav
 │   │   └── cart-badge.tsx          # Cart icon with count

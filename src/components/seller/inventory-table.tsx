@@ -42,8 +42,8 @@ interface InventoryTableProps {
   onPageChange: (page: number) => void;
 }
 
-const statusVariants: Record<VehicleStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-  PUBLISHED: 'default',
+const statusVariants: Record<VehicleStatus, 'default' | 'secondary' | 'destructive' | 'outline' | 'success'> = {
+  PUBLISHED: 'success',
   DRAFT: 'secondary',
   SOLD: 'outline',
   RESERVED: 'outline',
@@ -117,7 +117,7 @@ export function InventoryTable({
 
   return (
     <>
-      <div className="rounded-md border">
+      <div className="rounded-lg border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -229,11 +229,11 @@ export function InventoryTable({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center justify-between mt-5 px-1">
           <p className="text-sm text-muted-foreground">
             Showing {startItem}-{endItem} of {totalCount} vehicles
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -243,7 +243,7 @@ export function InventoryTable({
               <ChevronLeft className="h-4 w-4" />
               Previous
             </Button>
-            <span className="text-sm">
+            <span className="text-sm font-medium text-muted-foreground">
               Page {page} of {totalPages}
             </span>
             <Button

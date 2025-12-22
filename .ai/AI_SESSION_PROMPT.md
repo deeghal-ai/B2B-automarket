@@ -74,14 +74,14 @@ At the END of our session, update:
 3. **`.ai/DECISIONS.md`**:
    - Add any new architecture decisions made
 
-Provide me the exact updated content for each file.
+Update content for each file.
 
 ---
 
 ## Today's Session
 
-**What I want to work on today:** [DESCRIBE YOUR TASK HERE]
+**What I want to work on today:** update the design look and feel; ask me how and which reference to take
 
-**Relevant spec file:** [SPECIFY WHICH SPEC FILE]
+**Relevant spec file:**
 
 Please start by reading the files mentioned above and confirming your understanding.

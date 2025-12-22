@@ -149,42 +149,42 @@ export function SearchFilters({
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-      <div className="flex items-center justify-between gap-4 py-2 px-3 bg-muted/50 rounded-lg border border-dashed">
+      <div className="flex items-center justify-between gap-4 py-2.5 px-4 bg-card rounded-lg border shadow-sm">
         <Button
           variant="ghost"
           size="sm"
-          className="gap-2 px-2 h-8"
+          className="gap-2 px-3 h-8 font-medium"
           onClick={() => setIsOpen(!isOpen)}
         >
           <Filter className="h-4 w-4" />
           <span className="text-sm">Filters</span>
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+            <Badge variant="stock" className="h-5 px-1.5 text-xs">
               {activeFilterCount}
             </Badge>
           )}
           {isOpen ? (
-            <ChevronUp className="h-3 w-3" />
+            <ChevronUp className="h-3 w-3 ml-1" />
           ) : (
-            <ChevronDown className="h-3 w-3" />
+            <ChevronDown className="h-3 w-3 ml-1" />
           )}
         </Button>
 
         {activeFilterCount > 0 && (
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
             onClick={handleClearAll}
-            className="text-muted-foreground hover:text-foreground h-8 px-2"
+            className="h-8 px-3 text-sm"
           >
-            <X className="h-3 w-3 mr-1" />
-            <span className="text-xs">Clear</span>
+            <X className="h-3.5 w-3.5 mr-1" />
+            Clear All
           </Button>
         )}
       </div>
 
       <CollapsibleContent className="mt-3">
-        <div className="p-4 bg-card rounded-lg border space-y-4">
+        <div className="p-5 bg-card rounded-lg border shadow-sm space-y-5">
           {/* Search - Full width */}
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
