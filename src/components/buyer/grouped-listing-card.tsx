@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +8,13 @@ import { ChevronDown, ChevronUp, ShoppingCart, Store, Check } from 'lucide-react
 import { GroupedListing, GroupingField } from '@/types/grouping';
 import { VehicleSelectionList } from './vehicle-selection-list';
 import { formatPrice, formatMileage, conditionLabels } from '@/lib/utils';
+import { useCartStore } from '@/stores/cart-store';
 import type { CartVehicle } from '@/types';
+
+interface AddFeedback {
+  added: number;
+  alreadyInCart: number;
+}
 
 interface Props {
   listing: GroupedListing;
@@ -21,7 +27,20 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [loadedVehicles, setLoadedVehicles] = useState<CartVehicle[]>([]);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [addedCount, setAddedCount] = useState<number | null>(null);
+  const [addFeedback, setAddFeedback] = useState<AddFeedback | null>(null);
+
+  // Get cart state to check which vehicles are already in cart
+  const cartItems = useCartStore((state) => state.items);
+  const cartVehicleIds = useMemo(
+    () => new Set(cartItems.map((item) => item.id)),
+    [cartItems]
+  );
+
+  // Count how many vehicles in this group are already in cart
+  const inCartCount = useMemo(
+    () => listing.vehicleIds.filter((id) => cartVehicleIds.has(id)).length,
+    [listing.vehicleIds, cartVehicleIds]
+  );
 
   // Build display title from grouped field values
   const titleParts: string[] = [];
@@ -63,25 +82,29 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
     variationInfo.push(`Years: ${sortedYears[0]} - ${sortedYears[sortedYears.length - 1]}`);
   }
 
-  const showAddedFeedback = (count: number) => {
-    setAddedCount(count);
-    setTimeout(() => setAddedCount(null), 2000);
+  const showAddedFeedback = (vehicles: CartVehicle[]) => {
+    // Calculate how many are new vs already in cart
+    const alreadyInCart = vehicles.filter((v) => cartVehicleIds.has(v.id)).length;
+    const added = vehicles.length - alreadyInCart;
+    
+    setAddFeedback({ added, alreadyInCart });
+    setTimeout(() => setAddFeedback(null), 3000);
   };
 
   const handleAddToCart = async () => {
     // If we have selected vehicles from expanded view, add those
     if (selectedIds.length > 0 && loadedVehicles.length > 0) {
       const selectedVehicles = loadedVehicles.filter((v) => selectedIds.includes(v.id));
+      showAddedFeedback(selectedVehicles);
       onAddToCart(selectedVehicles);
-      showAddedFeedback(selectedVehicles.length);
       setSelectedIds([]); // Clear selection after adding
       return;
     }
 
     // If vehicles are already loaded (from expanded view), add all
     if (loadedVehicles.length > 0) {
+      showAddedFeedback(loadedVehicles);
       onAddToCart(loadedVehicles);
-      showAddedFeedback(loadedVehicles.length);
       return;
     }
 
@@ -131,8 +154,8 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
       }));
 
       setLoadedVehicles(cartVehicles);
+      showAddedFeedback(cartVehicles);
       onAddToCart(cartVehicles);
-      showAddedFeedback(cartVehicles.length);
     } catch (error) {
       console.error('Failed to add to cart:', error);
     } finally {
@@ -168,9 +191,16 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
                   <span className="truncate">{listing.sellerName}</span>
                 </div>
               </div>
-              <Badge variant="stock" className="flex-shrink-0">
-                {listing.unitCount} {listing.unitCount === 1 ? 'unit' : 'units'}
-              </Badge>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <Badge variant="stock">
+                  {listing.unitCount} {listing.unitCount === 1 ? 'unit' : 'units'}
+                </Badge>
+                {inCartCount > 0 && (
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                    {inCartCount} in cart
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Details */}
@@ -229,13 +259,17 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
               <Button
                 size="sm"
                 onClick={handleAddToCart}
-                disabled={isAddingToCart || addedCount !== null}
-                className={addedCount !== null ? 'bg-success hover:bg-success' : ''}
+                disabled={isAddingToCart || addFeedback !== null}
+                className={addFeedback !== null ? 'bg-success hover:bg-success' : ''}
               >
-                {addedCount !== null ? (
+                {addFeedback !== null ? (
                   <>
-                    <Check className="w-4 h-4 mr-1 animate-bounce" />
-                    Added {addedCount} to Cart!
+                    <Check className="w-4 h-4 mr-1" />
+                    {addFeedback.added > 0 && addFeedback.alreadyInCart > 0
+                      ? `Added ${addFeedback.added} (${addFeedback.alreadyInCart} already in cart)`
+                      : addFeedback.added > 0
+                        ? `Added ${addFeedback.added} to cart`
+                        : `All ${addFeedback.alreadyInCart} already in cart`}
                   </>
                 ) : isAddingToCart ? (
                   <>
@@ -262,6 +296,7 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
               onSelectionChange={setSelectedIds}
               onVehiclesLoaded={handleVehiclesLoaded}
               sellerName={listing.sellerName}
+              cartVehicleIds={cartVehicleIds}
             />
           </div>
         )}

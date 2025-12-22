@@ -334,6 +334,28 @@
 
 ---
 
+### [DECISION-020] Cart Duplicate Handling via Visual Feedback
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: When users change grouping parameters and add vehicles to cart, some vehicles may already exist in the cart from previous additions. Should we reset the cart when grouping changes, show a confirmation modal, or use a different approach?
+**Decision**: Use visual feedback only - show which vehicles are already in cart, with no cart reset.
+**Rationale**:
+- Cart uses vehicle IDs, not grouped "buckets", so there's no data corruption
+- Duplicates are already silently skipped by the cart store
+- Visual indicators prevent user confusion:
+  - "X in cart" badge on grouped listing cards
+  - "In Cart" badge on individual vehicle rows
+  - "Select All (X already in cart)" counter
+  - Enhanced feedback: "Added X (Y already in cart)" message
+- Resetting cart would lose user's previous work and be frustrating
+- Preserves cart state across grouping changes (expected behavior)
+**Consequences**:
+- Users always know cart state regardless of current grouping view
+- No confirmation modals or disruptive UX interruptions
+- Cart store logic unchanged (addItems already filters duplicates)
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

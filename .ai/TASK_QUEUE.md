@@ -226,4 +226,5 @@
 | Dec 22, 2024 | Image Upload | ✅ Supabase Storage upload, set primary, delete, dropzone UI, race condition fix |
 | Dec 22, 2024 | AD Ports Design Refresh | ✅ Dark navy buttons, teal stock badges, polished UI - functionality preserved |
 | Dec 22, 2024 | Inspection Report Feature | ✅ HTTP fetch + OpenAI GPT-4o-mini scraper (no Puppeteer), InspectionReport model, cached API, green checkmark UI card |
+| Dec 22, 2024 | Cart Duplicate Visual Feedback | ✅ "X in cart" badge on cards, "In Cart" badges on vehicle rows, "X already in cart" counter, enhanced add-to-cart messages |
 | Next session | Phase 5 Checkout | Checkout flow, order management |

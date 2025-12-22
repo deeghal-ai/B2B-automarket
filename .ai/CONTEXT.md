@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Inspection Report Feature (OpenAI + HTTP Fetch)
-**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports
+**Last Session Focus**: Cart Duplicate Visual Feedback (Grouping Edge Case)
+**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports + Cart UX
 
 ### What's Been Built
 
@@ -56,6 +56,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Inspection report scraping with OpenAI API (HTTP fetch + GPT-4o-mini)
 - [x] InspectionReport database model with caching
 - [x] Inspection report display on vehicle detail page
+- [x] Cart duplicate awareness (visual feedback when vehicles already in cart)
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -112,6 +113,11 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Clickable vehicle rows navigate to detail page
    - Select individual vehicles or "Select All" within group
    - Bulk add to cart from groups with visual feedback (green button + "Added X to Cart!")
+   - **NEW**: Cart duplicate awareness:
+     - "X in cart" badge on grouped listing cards showing vehicles already in cart
+     - "Select All (X already in cart)" indicator in expanded vehicle list
+     - "In Cart" badge with shopping cart icon on individual vehicle rows
+     - Enhanced add-to-cart feedback: "Added X (Y already in cart)" message
    - Grouping preference saved to localStorage
    - URL-based state for shareable/bookmarkable views
    - Vehicle detail page with full specifications
@@ -207,6 +213,10 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### Key Files Modified Recently
 
 ```
+# Cart Duplicate Visual Feedback (Dec 22, 2024)
+src/components/buyer/grouped-listing-card.tsx  # Added cart awareness: "X in cart" badge, enhanced feedback messages
+src/components/buyer/vehicle-selection-list.tsx # Added "In Cart" badges, "X already in cart" counter
+
 # Inspection Report Feature (Dec 22, 2024)
 prisma/schema.prisma                          # Added InspectionReport model
 src/types/inspection.ts                       # NEW: TypeScript types for inspection data

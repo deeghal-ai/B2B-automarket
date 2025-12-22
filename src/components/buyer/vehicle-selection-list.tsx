@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShoppingCart } from 'lucide-react';
 import { VehicleWithImage } from '@/types/grouping';
 import { formatPrice, formatMileage, truncateVin, conditionLabels } from '@/lib/utils';
 import type { CartVehicle } from '@/types';
@@ -16,6 +16,7 @@ interface Props {
   onSelectionChange: (ids: string[]) => void;
   onVehiclesLoaded?: (vehicles: CartVehicle[]) => void;
   sellerName: string;
+  cartVehicleIds?: Set<string>;
 }
 
 export function VehicleSelectionList({
@@ -24,6 +25,7 @@ export function VehicleSelectionList({
   onSelectionChange,
   onVehiclesLoaded,
   sellerName,
+  cartVehicleIds = new Set(),
 }: Props) {
   const router = useRouter();
   const [vehicles, setVehicles] = useState<VehicleWithImage[]>([]);
@@ -36,6 +38,12 @@ export function VehicleSelectionList({
   onVehiclesLoadedRef.current = onVehiclesLoaded;
 
   const INITIAL_DISPLAY_COUNT = 5;
+
+  // Count how many vehicles are already in cart
+  const inCartCount = useMemo(
+    () => vehicles.filter((v) => cartVehicleIds.has(v.id)).length,
+    [vehicles, cartVehicleIds]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -168,79 +176,97 @@ export function VehicleSelectionList({
                 ? `${selectedIds.length} of ${vehicles.length} selected`
                 : 'Select All'}
           </span>
+          {inCartCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({inCartCount} already in cart)
+            </span>
+          )}
         </label>
       </div>
 
       {/* Vehicle List */}
       <div className="space-y-2">
-        {displayedVehicles.map((vehicle) => (
-          <div
-            key={vehicle.id}
-            className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer group ${
-              selectedIds.includes(vehicle.id)
-                ? 'bg-primary/5 border-primary/30 shadow-sm'
-                : 'bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/20'
-            }`}
-            onClick={() => router.push(`/buyer/vehicle/${vehicle.id}`)}
-          >
-            {/* Checkbox - stop propagation so clicking it doesn't navigate */}
-            <div onClick={(e) => e.stopPropagation()}>
-              <Checkbox
-                checked={selectedIds.includes(vehicle.id)}
-                onCheckedChange={() => toggleVehicle(vehicle.id)}
-              />
-            </div>
-
-            {/* Image */}
-            <div className="w-16 h-12 bg-muted rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
-              {vehicle.primaryImage ? (
-                <img
-                  src={vehicle.primaryImage}
-                  alt={`${vehicle.make} ${vehicle.model}`}
-                  className="w-full h-full object-cover"
+        {displayedVehicles.map((vehicle) => {
+          const isInCart = cartVehicleIds.has(vehicle.id);
+          return (
+            <div
+              key={vehicle.id}
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer group ${
+                isInCart
+                  ? 'bg-primary/5 border-primary/20'
+                  : selectedIds.includes(vehicle.id)
+                    ? 'bg-primary/5 border-primary/30 shadow-sm'
+                    : 'bg-muted/30 hover:bg-muted/50 hover:border-muted-foreground/20'
+              }`}
+              onClick={() => router.push(`/buyer/vehicle/${vehicle.id}`)}
+            >
+              {/* Checkbox - stop propagation so clicking it doesn't navigate */}
+              <div onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                  checked={selectedIds.includes(vehicle.id)}
+                  onCheckedChange={() => toggleVehicle(vehicle.id)}
                 />
-              ) : (
-                <span className="text-xl">🚗</span>
-              )}
-            </div>
+              </div>
 
-            {/* Details */}
-            <div className="flex-1 min-w-0">
-              {/* Title: Make Model Year - always show */}
-              <div className="font-semibold text-sm group-hover:text-primary transition-colors">
-                {vehicle.make} {vehicle.model} {vehicle.year}
-                {vehicle.variant && (
-                  <span className="font-normal text-muted-foreground ml-1">
-                    ({vehicle.variant})
-                  </span>
+              {/* Image */}
+              <div className="w-16 h-12 bg-muted rounded flex-shrink-0 flex items-center justify-center overflow-hidden">
+                {vehicle.primaryImage ? (
+                  <img
+                    src={vehicle.primaryImage}
+                    alt={`${vehicle.make} ${vehicle.model}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl">🚗</span>
                 )}
               </div>
-              {/* Sub details */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
-                <span>{vehicle.color}</span>
-                <span>{formatMileage(vehicle.mileage)}</span>
-                <span className="font-mono">VIN: {truncateVin(vehicle.vin)}</span>
+
+              {/* Details */}
+              <div className="flex-1 min-w-0">
+                {/* Title: Make Model Year - always show */}
+                <div className="font-semibold text-sm group-hover:text-primary transition-colors flex items-center gap-2">
+                  <span>
+                    {vehicle.make} {vehicle.model} {vehicle.year}
+                    {vehicle.variant && (
+                      <span className="font-normal text-muted-foreground ml-1">
+                        ({vehicle.variant})
+                      </span>
+                    )}
+                  </span>
+                  {isInCart && (
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 text-[10px] px-1.5 py-0 h-5">
+                      <ShoppingCart className="w-3 h-3 mr-1" />
+                      In Cart
+                    </Badge>
+                  )}
+                </div>
+                {/* Sub details */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-0.5 text-xs text-muted-foreground mt-0.5">
+                  <span>{vehicle.color}</span>
+                  <span>{formatMileage(vehicle.mileage)}</span>
+                  <span className="font-mono">VIN: {truncateVin(vehicle.vin)}</span>
+                </div>
               </div>
-            </div>
 
-            {/* Price with Incoterm */}
-            <div className="flex items-center gap-1.5 flex-shrink-0">
-              <span className="font-bold text-base">
-                {formatPrice(vehicle.price, vehicle.currency ?? undefined)}
-              </span>
-              {vehicle.incoterm && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
-                  {vehicle.incoterm}
-                </Badge>
-              )}
-            </div>
+              {/* Price with Incoterm */}
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <span className="font-bold text-base">
+                  {formatPrice(vehicle.price, vehicle.currency ?? undefined)}
+                </span>
+                {vehicle.incoterm && (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                    {vehicle.incoterm}
+                  </Badge>
+                )}
+              </div>
 
-            {/* Condition Badge */}
-            <Badge variant="outline" className="flex-shrink-0 hidden sm:inline-flex">
-              {conditionLabels[vehicle.condition] || vehicle.condition}
-            </Badge>
-          </div>
-        ))}
+              {/* Condition Badge */}
+              <Badge variant="outline" className="flex-shrink-0 hidden sm:inline-flex">
+                {conditionLabels[vehicle.condition] || vehicle.condition}
+              </Badge>
+            </div>
+          );
+        })}
       </div>
 
       {/* Show More */}
