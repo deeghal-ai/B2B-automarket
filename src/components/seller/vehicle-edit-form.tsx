@@ -26,7 +26,8 @@ import { VehicleImageUpload } from './vehicle-image-upload';
 import { SerializedVehicleWithImage } from '@/types/inventory';
 
 interface VehicleEditFormProps {
-  vehicle: SerializedVehicleWithImage;
+  vehicle?: SerializedVehicleWithImage; // Optional for "add" mode
+  mode?: 'add' | 'edit'; // Add or edit mode
 }
 
 interface FormState {
@@ -84,40 +85,40 @@ const INCOTERM_OPTIONS = [
   { value: 'CIF', label: 'CIF - Cost, Insurance & Freight' },
 ];
 
-export function VehicleEditForm({ vehicle }: VehicleEditFormProps) {
+export function VehicleEditForm({ vehicle, mode = 'edit' }: VehicleEditFormProps) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize form state from vehicle
+  // Initialize form state from vehicle (edit mode) or with empty values (add mode)
   const [form, setForm] = useState<FormState>({
-    make: vehicle.make,
-    model: vehicle.model,
-    variant: vehicle.variant || '',
-    year: String(vehicle.year),
-    color: vehicle.color,
-    condition: vehicle.condition,
-    bodyType: vehicle.bodyType,
-    fuelType: vehicle.fuelType,
-    transmission: vehicle.transmission,
-    drivetrain: vehicle.drivetrain,
-    engineSize: vehicle.engineSize ? String(vehicle.engineSize) : '',
-    cylinders: vehicle.cylinders ? String(vehicle.cylinders) : '',
-    horsepower: vehicle.horsepower ? String(vehicle.horsepower) : '',
-    mileage: String(vehicle.mileage),
-    doors: vehicle.doors ? String(vehicle.doors) : '',
-    seatingCapacity: vehicle.seatingCapacity ? String(vehicle.seatingCapacity) : '',
-    vin: vehicle.vin,
-    registrationNo: vehicle.registrationNo || '',
-    city: vehicle.city,
-    country: vehicle.country,
-    regionalSpecs: vehicle.regionalSpecs || '',
-    price: vehicle.price ? String(vehicle.price) : '',
-    currency: vehicle.currency,
-    incoterm: vehicle.incoterm || '',
-    description: vehicle.description || '',
-    features: vehicle.features.join(', '),
-    inspectionReportLink: vehicle.inspectionReportLink || '',
+    make: vehicle?.make || '',
+    model: vehicle?.model || '',
+    variant: vehicle?.variant || '',
+    year: vehicle ? String(vehicle.year) : '',
+    color: vehicle?.color || '',
+    condition: vehicle?.condition || '',
+    bodyType: vehicle?.bodyType || '',
+    fuelType: vehicle?.fuelType || '',
+    transmission: vehicle?.transmission || '',
+    drivetrain: vehicle?.drivetrain || '',
+    engineSize: vehicle?.engineSize ? String(vehicle.engineSize) : '',
+    cylinders: vehicle?.cylinders ? String(vehicle.cylinders) : '',
+    horsepower: vehicle?.horsepower ? String(vehicle.horsepower) : '',
+    mileage: vehicle ? String(vehicle.mileage) : '',
+    doors: vehicle?.doors ? String(vehicle.doors) : '',
+    seatingCapacity: vehicle?.seatingCapacity ? String(vehicle.seatingCapacity) : '',
+    vin: vehicle?.vin || '',
+    registrationNo: vehicle?.registrationNo || '',
+    city: vehicle?.city || '',
+    country: vehicle?.country || '',
+    regionalSpecs: vehicle?.regionalSpecs || '',
+    price: vehicle?.price ? String(vehicle.price) : '',
+    currency: vehicle?.currency || 'USD',
+    incoterm: vehicle?.incoterm || '',
+    description: vehicle?.description || '',
+    features: vehicle?.features.join(', ') || '',
+    inspectionReportLink: vehicle?.inspectionReportLink || '',
   });
 
   const handleChange = (field: keyof FormState, value: string) => {
@@ -212,15 +213,19 @@ export function VehicleEditForm({ vehicle }: VehicleEditFormProps) {
         inspectionReportLink: form.inspectionReportLink.trim() || null,
       };
 
-      const response = await fetch(`/api/seller/vehicles/${vehicle.id}`, {
-        method: 'PATCH',
+      // Determine API endpoint and method based on mode
+      const url = mode === 'add' ? '/api/seller/vehicles' : `/api/seller/vehicles/${vehicle!.id}`;
+      const method = mode === 'add' ? 'POST' : 'PATCH';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Failed to update vehicle');
+        throw new Error(data.error || `Failed to ${mode === 'add' ? 'create' : 'update'} vehicle`);
       }
 
       router.push('/seller/inventory');
@@ -602,8 +607,10 @@ export function VehicleEditForm({ vehicle }: VehicleEditFormProps) {
         </CardContent>
       </Card>
 
-      {/* Vehicle Images */}
-      <VehicleImageUpload vehicleId={vehicle.id} initialImages={vehicle.images} />
+      {/* Vehicle Images - Only show in edit mode */}
+      {mode === 'edit' && vehicle && (
+        <VehicleImageUpload vehicleId={vehicle.id} initialImages={vehicle.images} />
+      )}
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-4">
@@ -620,12 +627,12 @@ export function VehicleEditForm({ vehicle }: VehicleEditFormProps) {
           {saving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Saving...
+              {mode === 'add' ? 'Creating...' : 'Saving...'}
             </>
           ) : (
             <>
               <Save className="h-4 w-4 mr-2" />
-              Save Changes
+              {mode === 'add' ? 'Create Vehicle' : 'Save Changes'}
             </>
           )}
         </Button>

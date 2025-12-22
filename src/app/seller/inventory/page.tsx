@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { InventoryClient } from '@/components/seller/inventory-client';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Plus } from 'lucide-react';
 
 export default function InventoryPage() {
   return (
@@ -14,12 +14,20 @@ export default function InventoryPage() {
             View, manage, and publish your vehicles
           </p>
         </div>
-        <Link href="/seller/upload">
-          <Button className="gap-2">
-            <Upload className="h-4 w-4" />
-            Upload More
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link href="/seller/vehicle/add">
+            <Button variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" />
+              Add Vehicle
+            </Button>
+          </Link>
+          <Link href="/seller/upload">
+            <Button className="gap-2">
+              <Upload className="h-4 w-4" />
+              Bulk Upload
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Suspense

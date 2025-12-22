@@ -71,7 +71,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
         </p>
       </div>
 
-      <VehicleEditForm vehicle={serializedVehicle} />
+      <VehicleEditForm vehicle={serializedVehicle} mode="edit" />
     </div>
   );
 }

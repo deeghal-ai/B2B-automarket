@@ -161,6 +161,20 @@
 
 ---
 
+## ✅ Completed: Vercel Deployment
+
+### P0 - Production Deployment (Complete)
+- [x] Install `@sparticuz/chromium` for serverless Chromium
+- [x] Update inspection scraper for Vercel compatibility
+- [x] Create `vercel.json` with function config
+- [x] Update `next.config.ts` with serverExternalPackages
+- [x] Fix `package.json` (postinstall, @prisma/client in deps)
+- [x] Fix TypeScript Decimal→number serialization for edit page
+- [x] Deploy to Vercel
+- [x] Configure environment variables in Vercel dashboard
+
+---
+
 ## Phase 5: Checkout
 
 ### P1 - Basic Checkout
@@ -229,4 +243,5 @@
 | Dec 22, 2024 | Cart Duplicate Visual Feedback | ✅ "X in cart" badge on cards, "In Cart" badges on vehicle rows, "X already in cart" counter, enhanced add-to-cart messages |
 | Dec 22, 2024 | Grouped/Flat View Toggle | ✅ View mode toggle, flat listings API with sorting, table with sortable columns/checkboxes/add-to-cart, URL state |
 | Dec 22, 2024 | Inspection Report Bug Fixes | ✅ Fixed Prisma relation syntax, added Puppeteer-core for JS-rendered pages, validation before save |
+| Dec 22, 2024 | Vercel Deployment | ✅ @sparticuz/chromium for serverless, vercel.json, env vars, TypeScript fixes, deployed to production |
 | Next session | Phase 5 Checkout | Checkout flow, order management |

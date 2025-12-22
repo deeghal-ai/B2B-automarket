@@ -80,7 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** help me deploy this project to vercel. i already have an account; guide me step by step
+**What I want to work on today:** i want to add a sinle vehicle addition form for sellers; bulk upload is already implemented. add a sinle vehicle addition which essentially opens the same one page form which opens when we edit one vehicle in the inventory tab but this should just add the one vehicle to inventory
 
 **Relevant spec file:**
 

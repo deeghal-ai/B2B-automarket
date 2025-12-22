@@ -12,8 +12,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Inspection Report Bug Fixes (Prisma relations, Puppeteer for JS-rendered pages)
-**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports + Cart UX + View Toggle
+**Last Session Focus**: Vercel Deployment Setup
+**Current Phase**: Phase 4 Complete + Vercel Deployment
+**Production URL**: https://b2-b-automarket.vercel.app
 
 ### What's Been Built
 
@@ -61,6 +62,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Flat listings API endpoint (POST /api/vehicles/flat) with sorting
 - [x] Flat listings table with sortable columns, checkboxes, add-to-cart
 - [x] View mode persisted in URL and localStorage
+- [x] **Vercel deployment configured with serverless Chromium**
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -232,6 +234,16 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### Key Files Modified Recently
 
 ```
+# Vercel Deployment (Dec 22, 2024)
+vercel.json                                   # NEW: Vercel config with function settings for inspection API
+next.config.ts                                # Added serverExternalPackages, image remotePatterns
+package.json                                  # Moved @prisma/client to deps, added postinstall script
+src/lib/inspection-scraper.ts                 # Updated to use @sparticuz/chromium on Vercel
+src/types/inventory.ts                        # Added SerializedVehicle types for client components
+src/components/seller/vehicle-edit-form.tsx   # Updated to use SerializedVehicleWithImage type
+src/app/seller/vehicle/[id]/edit/page.tsx     # Fixed Decimal→number serialization type
+.gitignore                                    # Added *.deb, *.exe to prevent large file commits
+
 # Grouped/Flat View Toggle (Dec 22, 2024)
 src/components/buyer/view-mode-toggle.tsx     # NEW: Toggle component for Grouped/Flat modes
 src/components/buyer/flat-listings-table.tsx  # NEW: Table with sortable columns, checkboxes, add-to-cart
@@ -349,16 +361,40 @@ supabase/
 ### Environment Variables Needed
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://xnfljhbehrkaqiwkhfzc.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_0DHLveOqlQrg81M-CeI0Fg_PfXzF982
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Connect to Supabase via connection pooling
-DATABASE_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DATABASE_URL=postgresql://postgres.xnfljhbehrkaqiwkhfzc:PASSWORD@aws-1-ap-northeast-1.pooler.supabase.com:6543/postgres?pgbouncer=true
 
 # Direct connection to the database. Used for migrations
-DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
+DIRECT_URL=postgresql://postgres.xnfljhbehrkaqiwkhfzc:PASSWORD@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres
 
-OPENAI_API_KEY=
+OPENAI_API_KEY=your_openai_key_here
 ```
+
+**⚠️ Important for Vercel**: When adding env vars in Vercel dashboard, do NOT include quotes around values. Local `.env` files can have quotes, but Vercel UI expects raw values.
+
+### Vercel Deployment
+
+**Production URL**: https://b2-b-automarket.vercel.app
+
+**Deployment Configuration**:
+- Framework: Next.js (auto-detected)
+- Build Command: `prisma generate && next build` (via package.json)
+- Install Command: `npm install` (triggers postinstall → prisma generate)
+
+**Serverless Function Config** (`vercel.json`):
+- Inspection API (`/api/inspection/[vehicleId]`): 1024MB memory, 60s timeout
+- Uses `@sparticuz/chromium` for headless Chrome on Lambda
+
+**Required Vercel Environment Variables**:
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Supabase pooler connection (port 6543) |
+| `DIRECT_URL` | Supabase direct connection (port 5432) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
+| `OPENAI_API_KEY` | OpenAI API key for inspection scraping |
 
 ### Dependencies Installed
 ```json

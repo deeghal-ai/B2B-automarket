@@ -378,6 +378,39 @@
 
 ---
 
+### [DECISION-022] Vercel Deployment with Serverless Chromium
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: The inspection report scraper uses Puppeteer to render JavaScript-heavy Chinese inspection report pages. Vercel serverless functions don't have Chrome installed by default.
+**Decision**: Use `@sparticuz/chromium` package for Vercel/Lambda environments, with fallback to local Chrome for development.
+**Rationale**:
+- `@sparticuz/chromium` is specifically designed for AWS Lambda/Vercel serverless
+- ~50MB compressed, fits within Vercel's 250MB function limit
+- Automatic detection: checks `process.env.VERCEL` to switch between serverless and local Chrome
+- Local development continues to work with system-installed Chrome
+**Consequences**:
+- Inspection API configured with 1024MB memory, 60s timeout in `vercel.json`
+- `serverExternalPackages: ['@sparticuz/chromium']` in `next.config.ts`
+- Slightly slower cold starts for inspection API (~2-3s)
+- Works seamlessly across local dev and production
+
+---
+
+### [DECISION-023] Prisma Client in Production Dependencies
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: Vercel builds with `npm install --production` which skips devDependencies. `@prisma/client` was incorrectly placed in devDependencies.
+**Decision**: Move `@prisma/client` to dependencies, add `postinstall` script for `prisma generate`.
+**Rationale**:
+- Production builds need the Prisma client at runtime
+- `postinstall` ensures client is generated after `npm install` on Vercel
+- Build script also includes `prisma generate` as backup
+**Consequences**:
+- Proper Prisma client generation on Vercel
+- Slightly larger production bundle (expected)
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

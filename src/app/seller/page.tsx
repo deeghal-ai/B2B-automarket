@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Package, Upload, Eye, DollarSign } from 'lucide-react';
+import { Package, Upload, Eye, DollarSign, Plus } from 'lucide-react';
 
 export default async function SellerDashboardPage() {
   const supabase = await createClient();
@@ -92,10 +92,16 @@ export default async function SellerDashboardPage() {
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
+            <Link href="/seller/vehicle/add" className="block">
+              <Button variant="outline" className="w-full justify-start gap-2">
+                <Plus className="h-4 w-4" />
+                Add Single Vehicle
+              </Button>
+            </Link>
             <Link href="/seller/upload" className="block">
               <Button variant="outline" className="w-full justify-start gap-2">
                 <Upload className="h-4 w-4" />
-                Upload New Inventory
+                Bulk Upload Inventory
               </Button>
             </Link>
             <Link href="/seller/inventory" className="block">
