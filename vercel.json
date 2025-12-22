@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "functions": {
+    "src/app/api/inspection/[vehicleId]/route.ts": {
+      "memory": 1024,
+      "maxDuration": 60
+    }
+  }
+}
+

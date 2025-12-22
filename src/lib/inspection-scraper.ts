@@ -7,7 +7,10 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Common Chrome executable paths
+// Check if running on Vercel/AWS Lambda
+const isVercel = process.env.VERCEL === '1' || process.env.AWS_LAMBDA_FUNCTION_NAME;
+
+// Common Chrome executable paths for local development
 const CHROME_PATHS = {
   linux: [
     '/usr/bin/google-chrome',
@@ -28,9 +31,9 @@ const CHROME_PATHS = {
 };
 
 /**
- * Find Chrome executable path
+ * Find Chrome executable path for local development
  */
-async function findChromePath(): Promise<string | null> {
+async function findLocalChromePath(): Promise<string | null> {
   const platform = process.platform as 'linux' | 'win32' | 'darwin';
   const paths = CHROME_PATHS[platform] || CHROME_PATHS.linux;
   
@@ -42,6 +45,36 @@ async function findChromePath(): Promise<string | null> {
   }
   
   return null;
+}
+
+/**
+ * Get browser configuration for Puppeteer
+ * Uses @sparticuz/chromium on Vercel, local Chrome otherwise
+ */
+async function getBrowserConfig(): Promise<{ executablePath: string; args: string[] }> {
+  if (isVercel) {
+    // Use @sparticuz/chromium for Vercel/Lambda
+    const chromium = await import('@sparticuz/chromium');
+    return {
+      executablePath: await chromium.default.executablePath(),
+      args: chromium.default.args,
+    };
+  } else {
+    // Use local Chrome for development
+    const chromePath = await findLocalChromePath();
+    if (!chromePath) {
+      throw new Error('Chrome/Chromium not found locally. Please install Google Chrome.');
+    }
+    return {
+      executablePath: chromePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+    };
+  }
 }
 
 // Prompt for extracting inspection data from HTML content
@@ -98,28 +131,15 @@ export class InspectionFetchError extends Error {
  * This handles JavaScript-rendered pages like the Chaboshi inspection reports
  */
 async function fetchPageContent(url: string): Promise<string> {
-  const chromePath = await findChromePath();
-  
-  if (!chromePath) {
-    throw new InspectionFetchError(
-      'Chrome/Chromium not found. Please install Google Chrome to enable inspection report fetching.',
-      false,
-      false
-    );
-  }
-
   let browser;
   try {
     console.log('Launching browser for inspection report...');
+    const config = await getBrowserConfig();
+    
     browser = await puppeteer.launch({
-      executablePath: chromePath,
+      executablePath: config.executablePath,
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-      ],
+      args: config.args,
     });
 
     const page = await browser.newPage();
@@ -155,7 +175,21 @@ async function fetchPageContent(url: string): Promise<string> {
   } catch (error) {
     console.error('Puppeteer error:', error);
     
+    // Re-throw InspectionFetchError as-is
+    if (error instanceof InspectionFetchError) {
+      throw error;
+    }
+    
     if (error instanceof Error) {
+      // Chrome not found
+      if (error.message.includes('Chrome') || error.message.includes('Chromium')) {
+        throw new InspectionFetchError(
+          error.message,
+          false,
+          false
+        );
+      }
+      
       if (error.message.includes('timeout') || error.message.includes('Timeout')) {
         throw new InspectionFetchError(
           'Page load timed out. The inspection report server may be slow or unreachable.',

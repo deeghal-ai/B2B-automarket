@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { VehicleEditForm } from '@/components/seller/vehicle-edit-form';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
+import { SerializedVehicleWithImage } from '@/types/inventory';
 
 interface EditVehiclePageProps {
   params: Promise<{ id: string }>;
@@ -50,7 +51,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
   }
 
   // Convert Decimal to number for client component serialization
-  const serializedVehicle = {
+  const serializedVehicle: SerializedVehicleWithImage = {
     ...vehicle,
     price: vehicle.price ? Number(vehicle.price) : null,
   };

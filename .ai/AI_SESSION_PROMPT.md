@@ -80,7 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** inspection report feature display is not working
+**What I want to work on today:** help me deploy this project to vercel. i already have an account; guide me step by step
 
 **Relevant spec file:**
 

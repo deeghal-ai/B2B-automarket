@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Vehicle, VehicleImage } from '@prisma/client';
+import { VehicleImage } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,9 +23,10 @@ import {
   drivetrainLabels,
 } from '@/lib/utils';
 import { VehicleImageUpload } from './vehicle-image-upload';
+import { SerializedVehicleWithImage } from '@/types/inventory';
 
 interface VehicleEditFormProps {
-  vehicle: Vehicle & { images: VehicleImage[] };
+  vehicle: SerializedVehicleWithImage;
 }
 
 interface FormState {
