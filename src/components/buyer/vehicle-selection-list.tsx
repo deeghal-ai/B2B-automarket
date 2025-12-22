@@ -74,6 +74,8 @@ export function VehicleSelectionList({
             color: v.color,
             mileage: v.mileage,
             price: v.price,
+            currency: v.currency,
+            incoterm: v.incoterm,
             vin: v.vin,
             imageUrl: v.primaryImage,
           }));
@@ -221,9 +223,16 @@ export function VehicleSelectionList({
               </div>
             </div>
 
-            {/* Price */}
-            <div className="font-bold text-base flex-shrink-0">
-              {formatPrice(vehicle.price, vehicle.currency)}
+            {/* Price with Incoterm */}
+            <div className="flex items-center gap-1.5 flex-shrink-0">
+              <span className="font-bold text-base">
+                {formatPrice(vehicle.price, vehicle.currency ?? undefined)}
+              </span>
+              {vehicle.incoterm && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                  {vehicle.incoterm}
+                </Badge>
+              )}
             </div>
 
             {/* Condition Badge */}

@@ -100,9 +100,13 @@ model Vehicle {
   features    String[] // Array of feature strings
 
   // Pricing
-  price    Decimal       @db.Decimal(12, 2)
+  price    Decimal?      @db.Decimal(12, 2) // Nullable for RFQ vehicles
   currency String        @default("USD")
+  incoterm String?       // FOB or CIF (required when price is set)
   status   VehicleStatus @default(DRAFT)
+
+  // External Links
+  inspectionReportLink String? // URL to vehicle inspection report
 
   // Timestamps
   createdAt DateTime @default(now())

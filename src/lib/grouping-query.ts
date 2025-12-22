@@ -19,9 +19,15 @@ export interface GroupingFilters {
   maxPrice?: number;
   minYear?: number;
   maxYear?: number;
+  minMileage?: number;
+  maxMileage?: number;
   country?: string;
   make?: string;
   model?: string;
+  condition?: string;
+  bodyType?: string;
+  fuelType?: string;
+  transmission?: string;
 }
 
 /**
@@ -82,9 +88,22 @@ function buildWhereClause(filters?: GroupingFilters): {
     paramIndex++;
   }
 
+  if (filters?.minMileage !== undefined) {
+    conditions.push(`v."mileage" >= $${paramIndex}`);
+    params.push(filters.minMileage);
+    paramIndex++;
+  }
+
+  if (filters?.maxMileage !== undefined) {
+    conditions.push(`v."mileage" <= $${paramIndex}`);
+    params.push(filters.maxMileage);
+    paramIndex++;
+  }
+
   if (filters?.country) {
-    conditions.push(`v."country" = $${paramIndex}`);
-    params.push(filters.country);
+    // Use ILIKE for partial matching (e.g., "UAE" matches "United Arab Emirates")
+    conditions.push(`v."country" ILIKE $${paramIndex}`);
+    params.push(`%${filters.country}%`);
     paramIndex++;
   }
 
@@ -97,6 +116,31 @@ function buildWhereClause(filters?: GroupingFilters): {
   if (filters?.model) {
     conditions.push(`v."model" ILIKE $${paramIndex}`);
     params.push(`%${filters.model}%`);
+    paramIndex++;
+  }
+
+  // Enum fields need to be cast to text for comparison
+  if (filters?.condition) {
+    conditions.push(`v."condition"::text = $${paramIndex}`);
+    params.push(filters.condition);
+    paramIndex++;
+  }
+
+  if (filters?.bodyType) {
+    conditions.push(`v."bodyType"::text = $${paramIndex}`);
+    params.push(filters.bodyType);
+    paramIndex++;
+  }
+
+  if (filters?.fuelType) {
+    conditions.push(`v."fuelType"::text = $${paramIndex}`);
+    params.push(filters.fuelType);
+    paramIndex++;
+  }
+
+  if (filters?.transmission) {
+    conditions.push(`v."transmission"::text = $${paramIndex}`);
+    params.push(filters.transmission);
     paramIndex++;
   }
 
@@ -164,6 +208,7 @@ export function buildGroupingQuery(
       MIN(v."mileage")::int as "minMileage",
       MAX(v."mileage")::int as "maxMileage",
       ${aggregations ? aggregations + ',' : ''}
+      ARRAY_AGG(DISTINCT v."incoterm") as "incoterms",
       ARRAY_AGG(v."id") as "vehicleIds"
     FROM "Vehicle" v
     JOIN "Seller" s ON v."sellerId" = s."id"
@@ -224,13 +269,15 @@ export function transformToGroupedListing(
     minMileage: row.minMileage,
     maxMileage: row.maxMileage,
     vehicleIds: row.vehicleIds || [],
+    // Include incoterms (filter out nulls)
+    incoterms: row.incoterms ? (row.incoterms as (string | null)[]).filter((i): i is string => i !== null) : [],
   };
 
   // Add grouped field values
   for (const field of groupedFields) {
     if (row[field] !== undefined) {
       // Type assertion needed for dynamic field assignment
-      (listing as Record<string, unknown>)[field] = row[field];
+      (listing as unknown as Record<string, unknown>)[field] = row[field];
     }
   }
 
@@ -244,7 +291,7 @@ export function transformToGroupedListing(
     if (row[pluralKey] !== undefined) {
       // Filter out null values from aggregated arrays
       const values = (row[pluralKey] as unknown[]).filter((v) => v !== null);
-      (listing as Record<string, unknown>)[pluralKey] = values;
+      (listing as unknown as Record<string, unknown>)[pluralKey] = values;
     }
   }
 

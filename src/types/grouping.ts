@@ -61,6 +61,9 @@ export interface GroupedListing {
   years?: number[];
   bodyTypes?: string[];
 
+  // Incoterms in this group (for display as badge)
+  incoterms?: string[];
+
   // Vehicle IDs for expansion
   vehicleIds: string[];
 }
@@ -75,9 +78,15 @@ export interface GroupedListingsRequest {
     maxPrice?: number;
     minYear?: number;
     maxYear?: number;
+    minMileage?: number;
+    maxMileage?: number;
     country?: string;
     make?: string;
     model?: string;
+    condition?: string;
+    bodyType?: string;
+    fuelType?: string;
+    transmission?: string;
   };
   page?: number;
   limit?: number;
@@ -118,8 +127,9 @@ export interface VehicleWithImage {
   condition: string;
   bodyType: string;
   mileage: number;
-  price: number;
-  currency: string;
+  price: number | null;
+  currency: string | null;
+  incoterm: string | null;
   city: string;
   country: string;
   sellerId: string;

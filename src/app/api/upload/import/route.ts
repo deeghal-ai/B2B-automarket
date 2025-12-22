@@ -70,10 +70,13 @@ export async function POST(request: Request) {
       transmission: v.transmission as Prisma.VehicleCreateManyInput['transmission'],
       drivetrain: v.drivetrain as Prisma.VehicleCreateManyInput['drivetrain'],
       mileage: v.mileage,
-      price: new Prisma.Decimal(v.price),
+      // Price can be null (RFQ vehicles)
+      price: v.price !== null ? new Prisma.Decimal(v.price) : null,
       city: v.city,
       country: v.country,
-      currency: v.currency,
+      // Currency and incoterm are null when price is null (RFQ)
+      currency: v.currency ?? 'USD',
+      incoterm: v.incoterm ?? null,
       status: 'DRAFT', // Always import as draft
       // Optional fields
       variant: v.variant ?? null,
@@ -86,6 +89,7 @@ export async function POST(request: Request) {
       doors: v.doors ?? null,
       description: v.description ?? null,
       features: v.features ?? [],
+      inspectionReportLink: v.inspectionReportLink ?? null,
     }));
 
     // Import using createMany for performance

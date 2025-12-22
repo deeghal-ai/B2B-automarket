@@ -115,9 +115,16 @@ export default async function VehicleDetailPage({ params }: Props) {
             </Badge>
           </div>
 
-          <p className="text-4xl font-bold mb-6">
-            {formatPrice(Number(vehicle.price), vehicle.currency)}
-          </p>
+          <div className="flex items-center gap-3 mb-6">
+            <p className="text-4xl font-bold">
+              {formatPrice(vehicle.price ? Number(vehicle.price) : null, vehicle.currency ?? undefined)}
+            </p>
+            {vehicle.incoterm && (
+              <Badge variant="outline" className="text-sm px-2 py-1 font-medium">
+                {vehicle.incoterm}
+              </Badge>
+            )}
+          </div>
 
           <Card className="mb-6">
             <CardContent className="py-4">

@@ -11,9 +11,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 ## Current State
 
-**Last Updated**: December 20, 2024
-**Last Session Focus**: Buyer Dynamic Grouping (Phase 4)
-**Current Phase**: Phase 4 Complete (Buyer Dynamic Grouping Done)
+**Last Updated**: December 22, 2024
+**Last Session Focus**: Price/Incoterm/Inspection Upload Fields + RFQ Display
+**Current Phase**: Phase 4 Complete + Upload Enhancements
 
 ### What's Been Built
 
@@ -67,7 +67,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Quick action buttons
    - Getting started checklist
 
-3. **Seller Upload (P0 + P1 + P2 Complete)**
+3. **Seller Upload (P0 + P1 + P2 Complete + Pricing Enhancements)**
    - Drag-and-drop file upload for Excel/CSV
    - File type validation (.xlsx, .xls, .csv)
    - File size validation (max 10MB)
@@ -82,25 +82,49 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Row-by-row validation with error display (row number, field, message)
    - Collapsible validation errors panel grouped by row
    - Enum normalization (condition, bodyType, fuelType, transmission, drivetrain)
+   - **NEW**: Condition accepts letter grades (A/B/C/D) common in Asian markets
    - Auto-generated placeholder VINs for vehicles without VIN mapped
    - Default values for unmapped optional fields (uses seller's city/country)
    - Bulk import to database via Prisma createMany
    - Import progress indicator
    - Success/error summary with actions (Upload Another / Go to Inventory)
+   - **NEW**: Pricing section with conditional fields:
+     - Price field (optional) - if not mapped, vehicles display as "RFQ"
+     - When price is mapped, currency and incoterm become required
+     - Currency dropdown fallback (USD, AED, CNY, EUR) when not mapped from Excel
+     - Incoterm toggle (FOB/CIF) when not mapped from Excel
+     - Inspection Report Link field (optional URL)
 
 4. **Buyer Features (Phase 4 Complete)**
    - Browse page with dynamic grouping
    - Grouping parameter selector (Make, Model, Variant, Year, Color, Condition, Body Type)
    - Grouped listings showing unit count, price range, mileage range
+   - **NEW**: Vehicles without price display as "RFQ" (Request for Quote)
+   - **NEW**: Incoterm badge (FOB/CIF) displayed next to prices on all buyer pages
    - Expand groups to see individual vehicles
+   - Individual vehicle rows show Make, Model, Year with variant in parentheses
+   - Clickable vehicle rows navigate to detail page
    - Select individual vehicles or "Select All" within group
-   - Bulk add to cart from groups
+   - Bulk add to cart from groups with visual feedback (green button + "Added X to Cart!")
    - Grouping preference saved to localStorage
    - URL-based state for shareable/bookmarkable views
    - Vehicle detail page with full specifications
    - Cart persists in localStorage
    - Cart groups items by seller
    - Add/remove from cart working
+   - **Search & Filters (P2 Complete)**:
+     - Collapsible filter panel with compact grid layout (2 cols mobile, 4 cols desktop)
+     - Keyword search (debounced 300ms) by make/model
+     - Price range filter (min/max)
+     - Year range filter (min/max)
+     - Mileage range filter (min/max)
+     - Country dropdown filter
+     - Condition dropdown filter
+     - Body Type dropdown filter
+     - Fuel Type dropdown filter
+     - Transmission dropdown filter
+     - Filter count badge and "Clear All" button
+     - URL sync for shareable/bookmarkable filtered views
 
 5. **Shared Components**
    - Header with role-based navigation
@@ -136,6 +160,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - **Provider**: Supabase (PostgreSQL)
 - **ORM**: Prisma
 - **Schema Status**: ✅ Deployed and working
+- **Recent Changes**: Price nullable (RFQ), incoterm field, inspectionReportLink field
 
 ### Key Files Modified Recently
 
@@ -177,10 +202,11 @@ src/
 │   │   └── cart-badge.tsx          # Cart icon with count
 │   └── buyer/
 │       ├── add-to-cart-button.tsx  # Add to cart button
-│       ├── grouping-selector.tsx   # NEW: Checkbox UI for selecting grouping params
-│       ├── grouped-listing-card.tsx # NEW: Card for each grouped listing
-│       ├── vehicle-selection-list.tsx # NEW: Expandable list within group
-│       └── buyer-browse-client.tsx # NEW: Client wrapper for browse page
+│       ├── grouping-selector.tsx   # Checkbox UI for selecting grouping params
+│       ├── grouped-listing-card.tsx # Card for each grouped listing (with cart feedback)
+│       ├── vehicle-selection-list.tsx # Expandable list within group (clickable rows)
+│       ├── buyer-browse-client.tsx # Client wrapper for browse page
+│       └── search-filters.tsx      # NEW: Collapsible filter panel with all filters
 ├── app/
 │   ├── api/
 │   │   ├── upload/
@@ -355,13 +381,25 @@ const { imported, failed } = await importResponse.json();
 
 ### Dynamic Grouping API
 ```typescript
-// Fetch grouped listings
+// Fetch grouped listings with filters
 const response = await fetch('/api/vehicles/grouped', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
     groupBy: ['make', 'model', 'year'],
-    filters: { minPrice: 10000, maxPrice: 50000 },
+    filters: {
+      minPrice: 10000,
+      maxPrice: 50000,
+      minYear: 2018,
+      maxYear: 2024,
+      minMileage: 0,
+      maxMileage: 100000,
+      country: 'United Arab Emirates', // Full country name for ILIKE match
+      condition: 'GOOD',      // Enum value (EXCELLENT, GOOD, FAIR, POOR)
+      bodyType: 'SEDAN',      // Enum value (SEDAN, SUV, etc.)
+      fuelType: 'DIESEL',     // Enum value (PETROL, DIESEL, etc.)
+      transmission: 'AUTOMATIC', // Enum value (AUTOMATIC, MANUAL, etc.)
+    },
     page: 1,
     limit: 20,
   }),
@@ -381,30 +419,28 @@ const vehicles = await vehiclesResponse.json();
 
 ## Next Session Should Focus On
 
-**Priority 1: Search & Filters for Grouping (Phase 4 P2)**
-- Search by keyword (make, model)
-- Filter by price range
-- Filter by year range
-- Filter by mileage range
-- Filter by country
-
-**Priority 2: Checkout Flow (Phase 5)**
+**Priority 1: Checkout Flow (Phase 5)**
 - Checkout page with order summary
 - Contact/notes field
 - Submit inquiry (create order)
 - Order confirmation page
 - Spec file: `specs/features/buyer-cart.md`
 
-**Priority 3: Edit Vehicle Form**
+**Priority 2: Edit Vehicle Form**
 - Edit vehicle modal or page
 - All fields editable
 - Validate before saving
 
-**Priority 4: Save/Load Column Mappings**
+**Priority 3: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings
 - Save mapping with custom name
 - Load saved mappings dropdown
 - Set default mapping option
+
+**Priority 4: Order Management**
+- Buyer order history
+- Seller incoming orders view
+- Order status updates
 
 ---
 

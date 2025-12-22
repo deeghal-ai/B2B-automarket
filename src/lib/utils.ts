@@ -5,7 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatPrice(price: number, currency: string = 'USD'): string {
+export function formatPrice(price: number | null | undefined, currency: string = 'USD'): string {
+  // Show RFQ for null, undefined, or zero prices
+  if (price === null || price === undefined || price === 0) {
+    return 'RFQ';
+  }
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,

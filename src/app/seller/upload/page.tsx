@@ -20,6 +20,7 @@ import {
   ImportState,
   ValidateResponse,
   ImportResponse,
+  ImportDefaults,
 } from '@/types/upload';
 
 type UploadStep = 'upload' | 'mapping' | 'import';
@@ -33,6 +34,7 @@ export default function SellerUploadPage() {
     missingRequired: [],
     mappedFields: [],
   });
+  const [importDefaults, setImportDefaults] = useState<ImportDefaults>({});
 
   // Validation & Import state
   const [importState, setImportState] = useState<ImportState>('idle');
@@ -46,6 +48,7 @@ export default function SellerUploadPage() {
     setParsedData(data);
     // Reset all state when new file is uploaded
     setColumnMapping({});
+    setImportDefaults({});
     setImportState('idle');
     setValidRows([]);
     setValidationErrors([]);
@@ -57,6 +60,7 @@ export default function SellerUploadPage() {
   const handleClear = () => {
     setParsedData(null);
     setColumnMapping({});
+    setImportDefaults({});
     setImportState('idle');
     setValidRows([]);
     setValidationErrors([]);
@@ -76,9 +80,10 @@ export default function SellerUploadPage() {
   };
 
   const handleMappingChange = useCallback(
-    (mapping: ColumnMappingState, validation: MappingValidation) => {
+    (mapping: ColumnMappingState, validation: MappingValidation, defaults: ImportDefaults) => {
       setColumnMapping(mapping);
       setMappingValidation(validation);
+      setImportDefaults(defaults);
     },
     []
   );
@@ -98,6 +103,7 @@ export default function SellerUploadPage() {
         body: JSON.stringify({
           rows: parsedData.rows,
           mapping: columnMapping,
+          defaults: importDefaults,
         }),
       });
 
@@ -166,6 +172,7 @@ export default function SellerUploadPage() {
     setCurrentStep('upload');
     setParsedData(null);
     setColumnMapping({});
+    setImportDefaults({});
     setMappingValidation({
       isValid: false,
       missingRequired: [],
@@ -291,6 +298,7 @@ export default function SellerUploadPage() {
             <ColumnMapper
               headers={parsedData.headers}
               initialMapping={columnMapping}
+              initialDefaults={importDefaults}
               onChange={handleMappingChange}
             />
 

@@ -6,6 +6,8 @@ import {
   VehicleField,
   REQUIRED_VEHICLE_FIELDS,
   VEHICLE_FIELD_LABELS,
+  ImportDefaults,
+  INCOTERM_OPTIONS,
 } from '@/types/upload';
 
 // ============================================
@@ -28,6 +30,7 @@ const VALID_DRIVETRAINS = ['FWD', 'RWD', 'AWD', 'FOUR_WD'] as const;
 // ============================================
 
 // Maps common input variations to our enum values
+// Includes letter grades (A, B, C, D) common in Asian auto markets
 const CONDITION_ALIASES: Record<string, string> = {
   'excellent': 'EXCELLENT',
   'good': 'GOOD',
@@ -36,6 +39,25 @@ const CONDITION_ALIASES: Record<string, string> = {
   'very good': 'GOOD',
   'average': 'FAIR',
   'bad': 'POOR',
+  // Letter grades (common in Japan/China)
+  'a': 'EXCELLENT',
+  'a+': 'EXCELLENT',
+  'a-': 'EXCELLENT',
+  'b': 'GOOD',
+  'b+': 'GOOD',
+  'b-': 'GOOD',
+  'c': 'FAIR',
+  'c+': 'FAIR',
+  'c-': 'FAIR',
+  'd': 'POOR',
+  'd+': 'POOR',
+  'd-': 'POOR',
+  // Numeric grades
+  '1': 'EXCELLENT',
+  '2': 'GOOD',
+  '3': 'FAIR',
+  '4': 'POOR',
+  '5': 'POOR',
 };
 
 const BODY_TYPE_ALIASES: Record<string, string> = {
@@ -99,6 +121,11 @@ const DRIVETRAIN_ALIASES: Record<string, string> = {
   '4x4': 'FOUR_WD',
   'four wheel drive': 'FOUR_WD',
   'four-wheel drive': 'FOUR_WD',
+};
+
+const INCOTERM_ALIASES: Record<string, string> = {
+  'fob': 'FOB',
+  'cif': 'CIF',
 };
 
 // ============================================
@@ -184,6 +211,18 @@ function isValidVin(vin: string): boolean {
   return /^[A-HJ-NPR-Z0-9]{17}$/.test(cleanVin);
 }
 
+/**
+ * Basic URL validation
+ */
+function isValidUrl(url: string): boolean {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ============================================
 // Main Validation Function
 // ============================================
@@ -195,15 +234,24 @@ interface SellerInfo {
 
 /**
  * Transform and validate Excel rows using the column mapping
+ * 
+ * @param rows - Parsed Excel rows
+ * @param mapping - Column mapping from vehicle field to Excel header
+ * @param sellerInfo - Seller's city/country for defaults
+ * @param defaults - Default values for currency/incoterm when not mapped
  */
 export function validateAndTransformRows(
   rows: Record<string, unknown>[],
   mapping: ColumnMappingState,
-  sellerInfo: SellerInfo
+  sellerInfo: SellerInfo,
+  defaults?: ImportDefaults
 ): ValidationResult {
   const validRows: TransformedVehicle[] = [];
   const errors: ValidationError[] = [];
   let invalidRowCount = 0;
+
+  // Check if price column is mapped (determines if currency/incoterm are needed)
+  const isPriceColumnMapped = mapping.price !== null && mapping.price !== undefined;
 
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 2; // Excel row number (1-indexed, skip header)
@@ -326,25 +374,82 @@ export function validateAndTransformRows(
       transformed.vin = generatePlaceholderVin();
     }
 
-    // Price (optional, default 0)
+    // ===== Price, Currency, Incoterm handling =====
+    
+    // Price (optional - null means RFQ)
     const priceRaw = getValue('price');
-    const price = parseNumber(priceRaw);
-    if (priceRaw && price === null) {
-      rowErrors.push({
-        row: rowNum,
-        field: VEHICLE_FIELD_LABELS.price,
-        message: 'Price must be a valid number',
-        value: priceRaw,
-      });
-    } else if (price !== null && price < 0) {
-      rowErrors.push({
-        row: rowNum,
-        field: VEHICLE_FIELD_LABELS.price,
-        message: 'Price cannot be negative',
-        value: price,
-      });
+    let hasPrice = false;
+    
+    if (isPriceColumnMapped) {
+      const price = parseNumber(priceRaw);
+      
+      if (priceRaw !== undefined && priceRaw !== null && priceRaw !== '' && price === null) {
+        // Value provided but couldn't be parsed as a number
+        rowErrors.push({
+          row: rowNum,
+          field: VEHICLE_FIELD_LABELS.price,
+          message: 'Price must be a valid number',
+          value: priceRaw,
+        });
+      } else if (price !== null && price < 0) {
+        rowErrors.push({
+          row: rowNum,
+          field: VEHICLE_FIELD_LABELS.price,
+          message: 'Price cannot be negative',
+          value: price,
+        });
+      } else if (price !== null) {
+        transformed.price = price;
+        hasPrice = true;
+      } else {
+        // Price column mapped but value is empty/null for this row = RFQ
+        transformed.price = null;
+      }
     } else {
-      transformed.price = price ?? 0;
+      // Price column not mapped = all vehicles are RFQ
+      transformed.price = null;
+    }
+
+    // Currency (required when price is set, from mapping or defaults)
+    if (hasPrice) {
+      const currencyRaw = getValue('currency');
+      if (currencyRaw && String(currencyRaw).trim() !== '') {
+        transformed.currency = String(currencyRaw).trim().toUpperCase();
+      } else if (defaults?.currency) {
+        transformed.currency = defaults.currency;
+      } else {
+        // Should not happen if UI validation works, but fallback to USD
+        transformed.currency = 'USD';
+      }
+    } else {
+      // No price = no currency needed (RFQ)
+      transformed.currency = null;
+    }
+
+    // Incoterm (required when price is set, from mapping or defaults)
+    if (hasPrice) {
+      const incotermRaw = getValue('incoterm');
+      const incotermNormalized = normalizeEnum(incotermRaw, INCOTERM_ALIASES, INCOTERM_OPTIONS);
+      
+      if (incotermNormalized) {
+        transformed.incoterm = incotermNormalized;
+      } else if (incotermRaw && String(incotermRaw).trim() !== '') {
+        // Invalid incoterm value provided
+        rowErrors.push({
+          row: rowNum,
+          field: VEHICLE_FIELD_LABELS.incoterm,
+          message: `Incoterm must be one of: ${INCOTERM_OPTIONS.join(', ')}`,
+          value: incotermRaw,
+        });
+      } else if (defaults?.incoterm) {
+        transformed.incoterm = defaults.incoterm;
+      } else {
+        // Should not happen if UI validation works, but fallback to FOB
+        transformed.incoterm = 'FOB';
+      }
+    } else {
+      // No price = no incoterm needed (RFQ)
+      transformed.incoterm = null;
     }
 
     // Mileage (optional, default 0)
@@ -435,12 +540,6 @@ export function validateAndTransformRows(
       ? String(country).trim() 
       : sellerInfo.country;
 
-    // Currency (optional, default USD)
-    const currency = getValue('currency');
-    transformed.currency = currency && String(currency).trim() !== '' 
-      ? String(currency).trim().toUpperCase() 
-      : 'USD';
-
     // ===== Other optional fields =====
 
     // Registration Number
@@ -506,6 +605,18 @@ export function validateAndTransformRows(
       }
     }
 
+    // Inspection Report Link (optional URL)
+    const inspectionLinkRaw = getValue('inspectionReportLink');
+    if (inspectionLinkRaw && String(inspectionLinkRaw).trim() !== '') {
+      const linkValue = String(inspectionLinkRaw).trim();
+      if (isValidUrl(linkValue)) {
+        transformed.inspectionReportLink = linkValue;
+      } else {
+        // Invalid URL - warn but don't block (store as-is)
+        transformed.inspectionReportLink = linkValue;
+      }
+    }
+
     // ===== Collect results =====
 
     if (rowErrors.length > 0) {
@@ -539,4 +650,3 @@ export function checkRequiredFieldsMapped(mapping: ColumnMappingState): string[]
   
   return missingFields;
 }
-

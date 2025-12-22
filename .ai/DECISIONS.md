@@ -216,6 +216,87 @@
 
 ---
 
+### [DECISION-013] PostgreSQL Enum Filter Casting
+**Date**: 2024-12-21
+**Status**: Accepted
+**Context**: When filtering by enum fields (condition, bodyType, fuelType, transmission) in raw SQL queries, the comparison was failing silently.
+**Decision**: Cast enum columns to text for comparison: `v."fuelType"::text = $1`
+**Rationale**:
+- PostgreSQL enums need explicit casting when comparing with string parameters
+- Using `::text` cast ensures reliable string comparison
+- Simpler than casting the parameter to enum type
+**Consequences**:
+- Slightly less efficient than native enum comparison (minimal impact)
+- More reliable cross-database compatibility
+- All enum filters now work correctly
+
+---
+
+### [DECISION-014] Country Filter Partial Matching
+**Date**: 2024-12-21
+**Status**: Accepted
+**Context**: Country filter wasn't matching because database stores "United Arab Emirates" but dropdown had "UAE".
+**Decision**: Use ILIKE with wildcards for country filtering: `v."country" ILIKE '%UAE%'`
+**Rationale**:
+- More forgiving for user input variations
+- Handles both full names and abbreviations
+- Consistent with make/model search behavior
+**Consequences**:
+- May match unintended countries if names overlap (unlikely for countries)
+- Better UX than requiring exact matches
+
+---
+
+### [DECISION-015] Nullable Price for RFQ Vehicles
+**Date**: 2024-12-21
+**Status**: Accepted
+**Context**: Should vehicles without a price be stored as $0 or as null?
+**Decision**: Store price as NULL for RFQ (Request for Quote) vehicles.
+**Rationale**:
+- NULL clearly distinguishes "no price set" from "$0"
+- Display "RFQ" in UI when price is null
+- Aligns with B2B convention where pricing is often negotiated
+- Cleaner data model semantics
+**Consequences**:
+- Schema change required (price Decimal -> Decimal?)
+- UI must handle null price display as "RFQ"
+- Existing vehicles with price=0 may need migration
+
+---
+
+### [DECISION-016] Conditional Currency/Incoterm Requirements
+**Date**: 2024-12-21
+**Status**: Accepted
+**Context**: When should currency and incoterm be required during upload?
+**Decision**: Currency and Incoterm are only required when price column is mapped.
+**Rationale**:
+- If no price, there's no currency/incoterm context needed
+- Reduces friction for sellers who only want to list vehicles for RFQ
+- When price IS set, trade terms (incoterm) and currency are essential for B2B
+- FOB/CIF are the most common incoterms for international auto trade
+**Consequences**:
+- UI shows conditional fields based on whether price is mapped
+- Validation logic must check this dependency
+- Default selection UI (FOB/CIF buttons, currency dropdown) when fields not mapped from Excel
+
+---
+
+### [DECISION-017] Condition Field Accepts Letter Grades
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: Sellers from Asian markets (Japan, China) use letter grades (A, B, C, D) for vehicle condition rather than words like "Excellent" or "Good".
+**Decision**: Accept letter grades A/B/C/D (with +/- variants) and numeric grades 1-5 as valid condition values.
+**Rationale**:
+- Common grading system in Asian auto auctions
+- Reduces friction for sellers importing from existing inventory systems
+- A → EXCELLENT, B → GOOD, C → FAIR, D → POOR
+- 1 → EXCELLENT, 2 → GOOD, 3 → FAIR, 4/5 → POOR
+**Consequences**:
+- Validation is more forgiving
+- Sellers don't need to convert their existing data
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

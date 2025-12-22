@@ -3,6 +3,7 @@
 import { useCartStore } from '@/stores/cart-store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Trash2, ShoppingCart } from 'lucide-react';
 import { formatPrice, formatMileage, truncateVin } from '@/lib/utils';
@@ -49,7 +50,7 @@ export default function CartPage() {
 
       <div className="space-y-6">
         {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
-          const sellerTotal = sellerItems.reduce((sum, item) => sum + item.price, 0);
+          const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
           
           return (
             <Card key={sellerId}>
@@ -89,7 +90,14 @@ export default function CartPage() {
                     </div>
                     
                     <div className="text-right flex-shrink-0">
-                      <p className="font-bold">{formatPrice(item.price)}</p>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <p className="font-bold">{formatPrice(item.price)}</p>
+                        {item.incoterm && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                            {item.incoterm}
+                          </Badge>
+                        )}
+                      </div>
                       <Button
                         variant="ghost"
                         size="sm"

@@ -151,9 +151,13 @@ model Vehicle {
   features    String[] // Array of feature strings
 
   // Pricing
-  price    Decimal       @db.Decimal(12, 2)
+  price    Decimal?      @db.Decimal(12, 2) // Nullable for RFQ vehicles
   currency String        @default("USD")
+  incoterm String?       // FOB or CIF (required when price is set)
   status   VehicleStatus @default(DRAFT)
+
+  // External Links
+  inspectionReportLink String? // URL to vehicle inspection report
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -434,7 +438,7 @@ These fields are optional in Excel mapping. If not mapped, defaults are applied:
 | Field | Type | Default Value |
 |-------|------|---------------|
 | vin | String | Auto-generated placeholder (TEMP...) |
-| price | Decimal | 0 |
+| price | Decimal? | null (RFQ - Request for Quote) |
 | mileage | Int | 0 |
 | bodyType | Enum | OTHER |
 | fuelType | Enum | OTHER |
@@ -442,7 +446,9 @@ These fields are optional in Excel mapping. If not mapped, defaults are applied:
 | drivetrain | Enum | FWD |
 | city | String | Seller's city |
 | country | String | Seller's country |
-| currency | String | USD |
+| currency | String | USD (or from UI dropdown when price mapped) |
+| incoterm | String? | null (FOB/CIF from UI when price mapped) |
+| inspectionReportLink | String? | null |
 | registrationNo | String | null |
 | regionalSpecs | String | null |
 | engineSize | Float | null |
@@ -452,6 +458,18 @@ These fields are optional in Excel mapping. If not mapped, defaults are applied:
 | doors | Int | null |
 | description | String | null |
 | features | String[] | [] |
+
+### Pricing Fields Logic
+
+When **price is mapped** from Excel:
+- Currency is required (either mapped from Excel or selected via dropdown)
+- Incoterm is required (either mapped from Excel or selected via FOB/CIF toggle)
+- Vehicles with valid price values are displayed with price
+
+When **price is NOT mapped**:
+- All vehicles display as "RFQ" (Request for Quote)
+- Currency and Incoterm are not required
+- Buyers must request a quote for pricing
 
 ### Enum Normalization
 

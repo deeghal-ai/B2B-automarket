@@ -57,7 +57,7 @@ export const useCartStore = create<CartStore>()(
 
       isInCart: (vehicleId) => get().items.some((item) => item.id === vehicleId),
 
-      getTotal: () => get().items.reduce((sum, item) => sum + item.price, 0),
+      getTotal: () => get().items.reduce((sum, item) => sum + (item.price ?? 0), 0),
 
       getItemsBySeller: () => {
         const items = get().items;

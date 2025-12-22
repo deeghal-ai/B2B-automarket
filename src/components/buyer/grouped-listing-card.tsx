@@ -108,7 +108,9 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
         year: number;
         color: string;
         mileage: number;
-        price: number;
+        price: number | null;
+        currency: string | null;
+        incoterm: string | null;
         vin: string;
         primaryImage: string | null;
       }) => ({
@@ -122,6 +124,8 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
         color: v.color,
         mileage: v.mileage,
         price: v.price,
+        currency: v.currency,
+        incoterm: v.incoterm,
         vin: v.vin,
         imageUrl: v.primaryImage,
       }));
@@ -171,9 +175,18 @@ export function GroupedListingCard({ listing, groupedFields, onAddToCart }: Prop
 
             {/* Details */}
             <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-              <div>
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-muted-foreground">Price: </span>
                 <span className="font-medium">{priceRange}</span>
+                {listing.incoterms && listing.incoterms.length > 0 && (
+                  <div className="flex gap-1">
+                    {listing.incoterms.map((term) => (
+                      <Badge key={term} variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                        {term}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <span className="text-muted-foreground">Mileage: </span>

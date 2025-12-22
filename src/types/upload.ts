@@ -27,6 +27,8 @@ export const VEHICLE_FIELDS = [
   'description',
   'features',
   'currency',
+  'incoterm',
+  'inspectionReportLink',
 ] as const;
 
 export type VehicleField = (typeof VEHICLE_FIELDS)[number];
@@ -68,6 +70,15 @@ export const VEHICLE_FIELD_LABELS: Record<VehicleField, string> = {
   description: 'Description',
   features: 'Features',
   currency: 'Currency',
+  incoterm: 'Incoterm',
+  inspectionReportLink: 'Inspection Report Link',
+};
+
+// Field descriptions for UI hints
+export const VEHICLE_FIELD_DESCRIPTIONS: Partial<Record<VehicleField, string>> = {
+  price: 'Selling price',
+  incoterm: 'International Commercial Terms',
+  inspectionReportLink: 'URL to vehicle inspection report',
 };
 
 // Maps VehicleField → Excel header (or null if not mapped)
@@ -101,6 +112,20 @@ export interface ValidationError {
   value?: unknown; // The invalid value (for debugging)
 }
 
+// Incoterm options (FOB and CIF only per requirements)
+export const INCOTERM_OPTIONS = ['FOB', 'CIF'] as const;
+export type Incoterm = (typeof INCOTERM_OPTIONS)[number];
+
+// Currency options for dropdown
+export const CURRENCY_OPTIONS = ['USD', 'AED', 'CNY', 'EUR'] as const;
+export type Currency = (typeof CURRENCY_OPTIONS)[number];
+
+// Default values that apply to entire dataset import
+export interface ImportDefaults {
+  currency?: Currency;
+  incoterm?: Incoterm;
+}
+
 // Transformed vehicle data ready for database insert
 export interface TransformedVehicle {
   // Required fields
@@ -115,10 +140,11 @@ export interface TransformedVehicle {
   transmission: string;
   drivetrain: string;
   mileage: number;
-  price: number;
+  price: number | null; // Nullable for RFQ vehicles
   city: string;
   country: string;
-  currency: string;
+  currency: string | null; // Null if price is null (RFQ)
+  incoterm: string | null; // FOB or CIF, null if price is null (RFQ)
   // Optional fields
   variant?: string | null;
   registrationNo?: string | null;
@@ -130,6 +156,7 @@ export interface TransformedVehicle {
   doors?: number | null;
   description?: string | null;
   features?: string[];
+  inspectionReportLink?: string | null;
 }
 
 // Result of validating all rows

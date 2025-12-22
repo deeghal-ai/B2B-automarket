@@ -131,17 +131,27 @@
 
 ### ✅ P1 - Group Expansion (Complete)
 - [x] Expand group to see individual units
-- [x] Show vehicle cards within group
+- [x] Show vehicle cards within group (Make, Model, Year + variant)
+- [x] Clickable vehicle rows navigate to detail page
 - [x] Checkbox selection per vehicle
 - [x] "Select All" for group
 - [x] Bulk add to cart from group
+- [x] Visual feedback when adding to cart (green button + "Added X to Cart!")
 
-### P2 - Search & Filters
-- [ ] Search by keyword (make, model)
-- [ ] Filter by price range
-- [ ] Filter by year range
-- [ ] Filter by mileage range
-- [ ] Filter by country
+### ✅ P2 - Search & Filters (Complete)
+- [x] Search by keyword (make, model) - debounced 300ms
+- [x] Filter by price range (min/max)
+- [x] Filter by year range (min/max)
+- [x] Filter by mileage range (min/max)
+- [x] Filter by country (ILIKE partial match)
+- [x] Filter by condition (enum dropdown)
+- [x] Filter by body type (enum dropdown)
+- [x] Filter by fuel type (enum dropdown)
+- [x] Filter by transmission (enum dropdown)
+- [x] Collapsible filter panel with compact grid layout
+- [x] URL sync for shareable/bookmarkable filters
+- [x] Active filter count badge
+- [x] Clear All button
 
 ---
 
@@ -201,4 +211,9 @@
 | Dec 20, 2024 | Seller Upload P2 | ✅ Row validation, enum normalization, bulk import, progress UI, summary |
 | Dec 20, 2024 | Phase 3 Inventory | ✅ Inventory list, filters, pagination, status toggle, bulk actions, delete |
 | Dec 20, 2024 | Phase 4 Grouping | ✅ Dynamic grouping API, grouping UI, grouped listings, group expansion, bulk cart |
-| Next session | Phase 4 P2 / Phase 5 | Search & filters, or checkout flow |
+| Dec 20, 2024 | Phase 4 UX Polish | ✅ Cart feedback animation, vehicle row details (Make/Model/Year), clickable rows |
+| Dec 21, 2024 | Phase 4 P2 Filters | ✅ Search & filters complete: 8 filter types, collapsible panel, URL sync, enum fix |
+| Dec 21, 2024 | Upload Pricing Enhancement | ✅ Nullable price (RFQ), incoterm field, inspection link, conditional currency/incoterm UI |
+| Dec 22, 2024 | RFQ Display + Condition Aliases | ✅ formatPrice shows "RFQ" for $0, condition accepts A/B/C/D grades |
+| Dec 22, 2024 | Incoterm Badge Display | ✅ Incoterm (FOB/CIF) badge shown next to prices on all buyer pages |
+| Next session | Phase 5 Checkout | Checkout flow, order management |

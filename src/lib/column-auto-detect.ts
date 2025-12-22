@@ -33,6 +33,8 @@ const COLUMN_ALIASES: Record<VehicleField, string[]> = {
   description: ['description', 'desc', 'notes', 'remarks', 'comments', 'details', 'vehicle description'],
   features: ['features', 'options', 'extras', 'equipment', 'accessories'],
   currency: ['currency', 'curr', 'price currency'],
+  incoterm: ['incoterm', 'incoterms', 'terms', 'shipping terms', 'trade terms', 'delivery terms'],
+  inspectionReportLink: ['inspection', 'inspection report', 'inspection link', 'report url', 'inspection url', 'report link'],
 };
 
 /**

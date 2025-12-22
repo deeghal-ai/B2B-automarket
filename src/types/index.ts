@@ -99,7 +99,9 @@ export interface CartVehicle {
   year: number;
   color: string;
   mileage: number;
-  price: number;
+  price: number | null;
+  currency?: string | null;
+  incoterm?: string | null;
   vin: string;
   imageUrl: string | null;
 }
