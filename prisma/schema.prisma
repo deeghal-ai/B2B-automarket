@@ -113,9 +113,10 @@ model Vehicle {
   updatedAt DateTime @updatedAt
 
   // Relations
-  images     VehicleImage[]
-  cartItems  CartItem[]
-  orderItems OrderItem[]
+  images           VehicleImage[]
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+  inspectionReport InspectionReport?
 
   // ===== INDEXES FOR GROUPING QUERIES =====
   @@index([sellerId, status])
@@ -278,4 +279,35 @@ model ColumnMapping {
   seller Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
   @@index([sellerId])
+}
+
+// ============================================
+// INSPECTION REPORT (Scraped from external source)
+// ============================================
+
+model InspectionReport {
+  id        String @id @default(cuid())
+  vehicleId String @unique
+  sourceUrl String
+
+  // Extracted data
+  overallGrade   String  // E, D, C, B, A
+  inspectionDate String?
+
+  // Category scores (X/Y format)
+  accidentScore String? // e.g., "9/70"
+  floodScore    String? // e.g., "7/27"
+  fireScore     String? // e.g., "0/23"
+  deepScore     String? // e.g., "13/42"
+
+  // Conclusions
+  isAccidentCar Boolean?
+  isFloodCar    Boolean?
+  isFireCar     Boolean?
+
+  // Metadata
+  rawResponse Json?    // Store full OpenAI response for debugging
+  scrapedAt   DateTime @default(now())
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 }

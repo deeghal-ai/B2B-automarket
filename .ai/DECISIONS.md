@@ -316,6 +316,24 @@
 
 ---
 
+### [DECISION-019] Inspection Report Scraping with OpenAI
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: Vehicles from China often have inspection reports from services like Chaboshi (查博士) that are in Chinese. How should we extract and display this data?
+**Decision**: Use simple HTTP fetch to get page HTML, then use OpenAI GPT-4o-mini to parse and extract structured data (grade, scores, conclusions).
+**Rationale**:
+- Simple HTTP fetch works without system dependencies (no Puppeteer/Chrome needed)
+- OpenAI can parse Chinese HTML content and extract key information
+- Results are cached in InspectionReport table to avoid repeated API calls
+- Provides a consistent English UI for UAE buyers
+- Much lighter deployment footprint
+**Consequences**:
+- Requires OPENAI_API_KEY environment variable
+- ~$0.001-0.01 per scrape (one-time cost per vehicle, cached)
+- May not work for heavily JavaScript-rendered pages (fallback to original link)
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

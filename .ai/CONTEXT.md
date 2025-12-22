@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: AD Ports Design Refresh
-**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh
+**Last Session Focus**: Inspection Report Feature (OpenAI + HTTP Fetch)
+**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports
 
 ### What's Been Built
 
@@ -53,6 +53,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Vehicle selection list with bulk add to cart
 - [x] Buyer browse page with dynamic grouping
 - [x] AD Ports design refresh (styling only, functionality preserved)
+- [x] Inspection report scraping with OpenAI API (HTTP fetch + GPT-4o-mini)
+- [x] InspectionReport database model with caching
+- [x] Inspection report display on vehicle detail page
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -134,6 +137,14 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
    - Cart badge with item count
    - Mobile responsive navigation
 
+8. **Inspection Report Feature**
+   - Scrapes Chinese inspection reports (Chaboshi 查博士) using HTTP fetch + OpenAI
+   - GPT-4o-mini parses HTML content and extracts: grade (A-E), scores, conclusions
+   - Results cached in InspectionReport database table
+   - Clean UI with grade letter, green checkmarks for "No Damage" status
+   - "View Full Report" button links to original Chinese report
+   - API: GET/POST /api/inspection/[vehicleId]
+
 7. **Design System (AD Ports Refresh)**
    - Dark navy primary color (#1e293b via oklch)
    - Teal stock badges for unit counts
@@ -174,6 +185,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - GET /api/seller/vehicles/[id]/images (list images)
      - PATCH /api/seller/vehicles/[id]/images/[imageId] (set primary)
      - DELETE /api/seller/vehicles/[id]/images/[imageId] (delete image)
+     - GET /api/inspection/[vehicleId] (fetch cached or scrape new inspection report)
+     - POST /api/inspection/[vehicleId] (force re-scrape inspection report)
 
 ### What's Broken / Known Issues
 
@@ -189,11 +202,19 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - **Provider**: Supabase (PostgreSQL)
 - **ORM**: Prisma
 - **Schema Status**: ✅ Deployed and working
-- **Recent Changes**: Price nullable (RFQ), incoterm field, inspectionReportLink field
+- **Recent Changes**: InspectionReport model for caching scraped inspection data
 
 ### Key Files Modified Recently
 
 ```
+# Inspection Report Feature (Dec 22, 2024)
+prisma/schema.prisma                          # Added InspectionReport model
+src/types/inspection.ts                       # NEW: TypeScript types for inspection data
+src/lib/inspection-scraper.ts                 # NEW: HTTP fetch + OpenAI GPT-4o-mini scraper (no Puppeteer)
+src/app/api/inspection/[vehicleId]/route.ts   # NEW: GET/POST API with caching
+src/components/buyer/inspection-report-card.tsx # NEW: Inspection report UI component (green checkmark design)
+src/app/buyer/vehicle/[id]/page.tsx           # Added InspectionReportCard integration
+
 # Design Refresh (Dec 22, 2024)
 src/app/globals.css                    # Updated CSS variables: dark navy primary, teal stock, green success
 src/components/ui/button.tsx           # Refined button variants with shadow-sm
@@ -294,6 +315,8 @@ DATABASE_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-
 
 # Direct connection to the database. Used for migrations
 DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres"
+
+OPENAI_API_KEY=
 ```
 
 ### Dependencies Installed
@@ -304,7 +327,8 @@ DIRECT_URL="postgresql://postgres.xnfljhbehrkaqiwkhfzc:oHymI6ppSar1c5ch@aws-1-ap
   "@supabase/supabase-js": "latest",
   "@tanstack/react-query": "latest",
   "xlsx": "latest",
-  "zustand": "latest"
+  "zustand": "latest",
+  "openai": "^4.73.0"
 }
 ```
 
@@ -463,6 +487,17 @@ const vehiclesResponse = await fetch('/api/vehicles/by-ids', {
   body: JSON.stringify({ vehicleIds: ['id1', 'id2'] }),
 });
 const vehicles = await vehiclesResponse.json();
+```
+
+### Inspection Report API
+```typescript
+// Fetch inspection report (cached or fresh)
+const response = await fetch(`/api/inspection/${vehicleId}`);
+const result = await response.json();
+// result = { success: boolean, data: InspectionReportData | null, error?: string }
+
+// Force re-scrape
+const refreshResponse = await fetch(`/api/inspection/${vehicleId}`, { method: 'POST' });
 ```
 
 ---

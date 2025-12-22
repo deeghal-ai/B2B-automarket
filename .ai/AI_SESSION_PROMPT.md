@@ -80,7 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** update the design look and feel; ask me how and which reference to take
+**What I want to work on today:** i want to implement a change in the buyer flow where "Cart" is chnaged to "Quote builder" like in the attached screenshot
 
 **Relevant spec file:**
 

@@ -49,6 +49,12 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
     redirect('/seller/inventory');
   }
 
+  // Convert Decimal to number for client component serialization
+  const serializedVehicle = {
+    ...vehicle,
+    price: vehicle.price ? Number(vehicle.price) : null,
+  };
+
   return (
     <div>
       <div className="mb-6">
@@ -64,7 +70,7 @@ export default async function EditVehiclePage({ params }: EditVehiclePageProps) 
         </p>
       </div>
 
-      <VehicleEditForm vehicle={vehicle} />
+      <VehicleEditForm vehicle={serializedVehicle} />
     </div>
   );
 }

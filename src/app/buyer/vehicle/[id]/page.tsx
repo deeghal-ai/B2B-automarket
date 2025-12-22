@@ -16,6 +16,7 @@ import {
   drivetrainLabels,
 } from '@/lib/utils';
 import { AddToCartButton } from '@/components/buyer/add-to-cart-button';
+import { InspectionReportCard } from '@/components/buyer/inspection-report-card';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -175,6 +176,12 @@ export default async function VehicleDetailPage({ params }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Inspection Report */}
+      <InspectionReportCard
+        vehicleId={vehicle.id}
+        inspectionReportLink={vehicle.inspectionReportLink}
+      />
 
       {/* Features */}
       {vehicle.features.length > 0 && (

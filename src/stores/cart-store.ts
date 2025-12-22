@@ -4,6 +4,7 @@ import type { CartVehicle } from '@/types';
 
 interface CartStore {
   items: CartVehicle[];
+  sellerNotes: Record<string, string>; // sellerId -> negotiation notes
 
   // Actions
   addItem: (vehicle: CartVehicle) => void;
@@ -12,17 +13,20 @@ interface CartStore {
   removeItems: (vehicleIds: string[]) => void;
   clearCart: () => void;
   clearSellerItems: (sellerId: string) => void;
+  updateSellerNote: (sellerId: string, note: string) => void;
 
   // Helpers
   isInCart: (vehicleId: string) => boolean;
   getTotal: () => number;
   getItemsBySeller: () => Record<string, CartVehicle[]>;
+  getSellerNote: (sellerId: string) => string;
 }
 
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
       items: [],
+      sellerNotes: {},
 
       addItem: (vehicle) => {
         const items = get().items;
@@ -41,7 +45,24 @@ export const useCartStore = create<CartStore>()(
       },
 
       removeItem: (vehicleId) => {
-        set({ items: get().items.filter((item) => item.id !== vehicleId) });
+        const items = get().items;
+        const itemToRemove = items.find((item) => item.id === vehicleId);
+        const newItems = items.filter((item) => item.id !== vehicleId);
+        
+        // Clean up seller notes if no more items from that seller
+        if (itemToRemove) {
+          const sellerStillHasItems = newItems.some(
+            (item) => item.sellerId === itemToRemove.sellerId
+          );
+          if (!sellerStillHasItems) {
+            const newNotes = { ...get().sellerNotes };
+            delete newNotes[itemToRemove.sellerId];
+            set({ items: newItems, sellerNotes: newNotes });
+            return;
+          }
+        }
+        
+        set({ items: newItems });
       },
 
       removeItems: (vehicleIds) => {
@@ -49,10 +70,24 @@ export const useCartStore = create<CartStore>()(
         set({ items: get().items.filter((item) => !idsToRemove.has(item.id)) });
       },
 
-      clearCart: () => set({ items: [] }),
+      clearCart: () => set({ items: [], sellerNotes: {} }),
 
       clearSellerItems: (sellerId) => {
-        set({ items: get().items.filter((item) => item.sellerId !== sellerId) });
+        const newNotes = { ...get().sellerNotes };
+        delete newNotes[sellerId];
+        set({ 
+          items: get().items.filter((item) => item.sellerId !== sellerId),
+          sellerNotes: newNotes 
+        });
+      },
+
+      updateSellerNote: (sellerId, note) => {
+        set({ 
+          sellerNotes: { 
+            ...get().sellerNotes, 
+            [sellerId]: note 
+          } 
+        });
       },
 
       isInCart: (vehicleId) => get().items.some((item) => item.id === vehicleId),
@@ -72,6 +107,8 @@ export const useCartStore = create<CartStore>()(
           {} as Record<string, CartVehicle[]>
         );
       },
+
+      getSellerNote: (sellerId) => get().sellerNotes[sellerId] || '',
     }),
     {
       name: 'cart-storage',

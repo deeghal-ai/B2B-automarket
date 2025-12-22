@@ -1,19 +1,29 @@
 'use client';
 
 import { useCartStore } from '@/stores/cart-store';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
-import { Trash2, ShoppingCart } from 'lucide-react';
-import { formatPrice, formatMileage, truncateVin } from '@/lib/utils';
+import { 
+  Trash2, 
+  FileText, 
+  ArrowLeft, 
+  User, 
+  MessageSquare,
+  Send
+} from 'lucide-react';
+import { formatPrice } from '@/lib/utils';
 
-export default function CartPage() {
+export default function QuoteBuilderPage() {
   const items = useCartStore((state) => state.items);
   const removeItem = useCartStore((state) => state.removeItem);
   const clearCart = useCartStore((state) => state.clearCart);
   const getTotal = useCartStore((state) => state.getTotal);
   const getItemsBySeller = useCartStore((state) => state.getItemsBySeller);
+  const sellerNotes = useCartStore((state) => state.sellerNotes);
+  const updateSellerNote = useCartStore((state) => state.updateSellerNote);
 
   const total = getTotal();
   const itemsBySeller = getItemsBySeller();
@@ -22,10 +32,10 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="text-center py-16">
-        <ShoppingCart className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-        <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
+        <FileText className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Your quote is empty</h1>
         <p className="text-muted-foreground mb-6">
-          Browse vehicles and add them to your cart for bulk purchase.
+          Browse vehicles and add them to build your quote request.
         </p>
         <Link href="/buyer">
           <Button>Browse Vehicles</Button>
@@ -35,105 +45,218 @@ export default function CartPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Shopping Cart</h1>
-          <p className="text-muted-foreground">
-            {items.length} vehicle{items.length !== 1 ? 's' : ''} from {sellerCount} seller{sellerCount !== 1 ? 's' : ''}
-          </p>
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/buyer" 
+            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Listings
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold">Quote Builder</h1>
+            <p className="text-muted-foreground">
+              {items.length} vehicle{items.length !== 1 ? 's' : ''} from {sellerCount} seller{sellerCount !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
-        <Button variant="outline" onClick={clearCart}>
-          Clear Cart
+        <Button 
+          variant="outline" 
+          onClick={clearCart}
+          className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Clear All
         </Button>
       </div>
 
-      <div className="space-y-6">
-        {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
-          const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
-          
-          return (
-            <Card key={sellerId}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <span>{sellerItems[0].sellerName}</span>
-                  <span className="text-sm font-normal text-muted-foreground">
-                    Subtotal: {formatPrice(sellerTotal)}
-                  </span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {sellerItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-4 p-3 bg-muted/50 rounded-md"
-                  >
-                    <div className="w-16 h-16 bg-muted rounded flex items-center justify-center flex-shrink-0">
-                      {item.imageUrl ? (
-                        <img
-                          src={item.imageUrl}
-                          alt={`${item.make} ${item.model}`}
-                          className="w-full h-full object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-2xl">🚗</span>
-                      )}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">
-                        {item.make} {item.model} {item.variant} {item.year}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {item.color} • {formatMileage(item.mileage)} • VIN: {truncateVin(item.vin)}
-                      </p>
-                    </div>
-                    
-                    <div className="text-right flex-shrink-0">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <p className="font-bold">{formatPrice(item.price)}</p>
-                        {item.incoterm && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
-                            {item.incoterm}
-                          </Badge>
-                        )}
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column - Seller groups */}
+        <div className="lg:col-span-2 space-y-6">
+          {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
+            const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
+            const sellerName = sellerItems[0].sellerName;
+            
+            return (
+              <Card key={sellerId} className="overflow-hidden">
+                {/* Seller header */}
+                <CardHeader className="pb-3 border-b bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="h-5 w-5 text-primary" />
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeItem(item.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{sellerName}</span>
+                          <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                            Verified Seller
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Seller Total</p>
+                      <p className="text-lg font-bold">{formatPrice(sellerTotal, sellerItems[0].currency || 'USD')}</p>
                     </div>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                </CardHeader>
+                
+                <CardContent className="p-4 space-y-4">
+                  {/* Vehicle items */}
+                  {sellerItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-start gap-4 p-4 bg-muted/30 rounded-lg border"
+                    >
+                      {/* Vehicle image */}
+                      <div className="relative w-24 h-20 bg-muted rounded-md flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={`${item.make} ${item.model}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-3xl">🚗</span>
+                        )}
+                      </div>
+                      
+                      {/* Vehicle info */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold">
+                          {item.year} {item.make} {item.model}
+                          {item.variant && ` ${item.variant}`}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {item.color}
+                        </p>
+                      </div>
+                      
+                      {/* Price and actions */}
+                      <div className="text-right flex-shrink-0">
+                        <div className="mb-1">
+                          <span className="text-sm text-muted-foreground">Unit Price</span>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <p className="font-bold text-lg">{formatPrice(item.price, item.currency || 'USD')}</p>
+                            {item.incoterm && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                                {item.incoterm}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeItem(item.id)}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10 mt-2"
+                        >
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Negotiation notes */}
+                  <div className="pt-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Negotiation Notes for {sellerName}</span>
+                    </div>
+                    <Textarea
+                      placeholder="Add any special requests, delivery dates, inspection requirements, or negotiation points..."
+                      value={sellerNotes[sellerId] || ''}
+                      onChange={(e) => updateSellerNote(sellerId, e.target.value)}
+                      className="min-h-[80px] resize-none"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1.5">
+                      Example: &quot;Need delivery by Dec 15&quot;, &quot;Inspection required before purchase&quot;, &quot;Interested in bulk discount&quot;
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
 
-      {/* Summary */}
-      <Card className="mt-6">
-        <CardContent className="py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">
-                Total: {items.length} vehicles from {sellerCount} seller{sellerCount !== 1 ? 's' : ''}
+        {/* Right column - Quote Summary */}
+        <div className="lg:col-span-1">
+          <Card className="sticky top-24">
+            <CardHeader className="bg-primary text-primary-foreground rounded-t-lg">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                <span className="font-semibold">Quote Summary</span>
+              </div>
+            </CardHeader>
+            <CardContent className="p-4 space-y-4">
+              {/* Breakdown by seller */}
+              <div>
+                <h3 className="font-medium mb-3">Breakdown by Seller</h3>
+                <div className="space-y-3">
+                      {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
+                    const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
+                    const sellerName = sellerItems[0].sellerName;
+                    const currency = sellerItems[0].currency || 'USD';
+                    
+                    return (
+                      <div key={sellerId} className="text-sm">
+                        <div className="flex justify-between font-medium">
+                          <span>{sellerName}</span>
+                          <span>{formatPrice(sellerTotal, currency)}</span>
+                        </div>
+                        {sellerItems.map((item) => (
+                          <div key={item.id} className="flex justify-between text-muted-foreground pl-2 mt-1">
+                            <span className="truncate pr-2">
+                              {item.year} {item.make} {item.model}
+                            </span>
+                            <span className="flex-shrink-0">{formatPrice(item.price, currency)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t pt-3 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Total Vehicles:</span>
+                  <span className="font-medium">{items.length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Total Sellers:</span>
+                  <span className="font-medium">{sellerCount}</span>
+                </div>
+              </div>
+
+              {/* Grand total */}
+              <div className="bg-primary text-primary-foreground p-4 rounded-lg -mx-1">
+                <div className="text-sm opacity-90">Grand Total</div>
+                <div className="text-2xl font-bold">
+                  {formatPrice(total, items[0]?.currency || 'USD')}
+                </div>
+              </div>
+
+              {/* Submit button */}
+              <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg">
+                <Send className="h-4 w-4 mr-2" />
+                Submit Quote Request
+              </Button>
+
+              <p className="text-xs text-muted-foreground text-center">
+                Your quote will be sent to all sellers. They will respond with their best offers.
               </p>
-              <p className="text-2xl font-bold">{formatPrice(total)}</p>
-            </div>
-            <div className="flex gap-3">
-              <Link href="/buyer">
-                <Button variant="outline">Continue Shopping</Button>
-              </Link>
-              <Button>Proceed to Checkout</Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

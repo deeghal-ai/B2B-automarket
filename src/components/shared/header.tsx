@@ -155,7 +155,7 @@ export function Header({ user }: HeaderProps) {
                         onClick={() => setOpen(false)}
                         className="text-lg font-medium"
                       >
-                        Cart
+                        Quote Builder
                       </Link>
                     </>
                   )}
