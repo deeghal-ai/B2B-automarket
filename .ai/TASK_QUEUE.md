@@ -227,4 +227,5 @@
 | Dec 22, 2024 | AD Ports Design Refresh | ✅ Dark navy buttons, teal stock badges, polished UI - functionality preserved |
 | Dec 22, 2024 | Inspection Report Feature | ✅ HTTP fetch + OpenAI GPT-4o-mini scraper (no Puppeteer), InspectionReport model, cached API, green checkmark UI card |
 | Dec 22, 2024 | Cart Duplicate Visual Feedback | ✅ "X in cart" badge on cards, "In Cart" badges on vehicle rows, "X already in cart" counter, enhanced add-to-cart messages |
+| Dec 22, 2024 | Grouped/Flat View Toggle | ✅ View mode toggle, flat listings API with sorting, table with sortable columns/checkboxes/add-to-cart, URL state |
 | Next session | Phase 5 Checkout | Checkout flow, order management |

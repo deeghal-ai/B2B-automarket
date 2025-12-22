@@ -356,6 +356,25 @@
 
 ---
 
+### [DECISION-021] Grouped/Flat View Toggle
+**Date**: 2024-12-22
+**Status**: Accepted
+**Context**: The browse page always required at least one grouping parameter. Some buyers prefer to see individual vehicles without any aggregation.
+**Decision**: Add a toggle to switch between "Grouped" and "Flat" view modes on the browse page.
+**Rationale**:
+- Grouped view is ideal for bulk purchasing (see aggregated units by make/model/year)
+- Flat view is better for browsing individual vehicles when not buying in bulk
+- Same filters work in both modes for consistency
+- Table view in flat mode allows sortable columns (price, year, mileage)
+- Both individual and bulk add-to-cart supported in flat mode
+**Consequences**:
+- New API endpoint (`POST /api/vehicles/flat`) for flat listings
+- View mode persisted in URL (`?view=grouped|flat`) and localStorage
+- Sort params (`sortBy`, `sortOrder`) only apply in flat mode
+- Grouping selector hidden in flat mode (not relevant)
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

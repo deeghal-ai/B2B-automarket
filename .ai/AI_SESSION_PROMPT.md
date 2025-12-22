@@ -80,7 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** I want to brainstorm a solution. look currently in browse page one parameter for grouping needs to always be selected. i want a toogle option for grouped and flat listings. grouped mode works exactly like right now but when togggled to flat mode, no grouping is applied and only individual vehicles are displayed which can be selected and added to cart
+**What I want to work on today:** inspection report feature display is not working
 
 **Relevant spec file:**
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { scrapeInspectionReport } from '@/lib/inspection-scraper';
+import { scrapeInspectionReport, InspectionFetchError } from '@/lib/inspection-scraper';
 import type { InspectionApiResponse } from '@/types/inspection';
 
 interface RouteParams {
@@ -78,10 +78,20 @@ export async function GET(
         vehicle.inspectionReportLink
       );
 
+      // Validate required fields
+      if (!extractedData.overallGrade) {
+        console.error('OpenAI extraction failed - no overallGrade found:', extractedData);
+        return NextResponse.json({
+          success: false,
+          data: null,
+          error: 'Failed to extract inspection data. The report format may have changed. Please try again.',
+        });
+      }
+
       // Save to database
       const saved = await prisma.inspectionReport.create({
         data: {
-          vehicleId,
+          vehicle: { connect: { id: vehicleId } },
           sourceUrl: vehicle.inspectionReportLink,
           overallGrade: extractedData.overallGrade,
           inspectionDate: extractedData.inspectionDate || null,
@@ -116,10 +126,22 @@ export async function GET(
       });
     } catch (scrapeError) {
       console.error('Failed to scrape inspection report:', scrapeError);
+      
+      // Provide more helpful error messages based on error type
+      let errorMessage = 'Failed to fetch inspection report. Please try again later.';
+      
+      if (scrapeError instanceof InspectionFetchError) {
+        if (scrapeError.isTimeout) {
+          errorMessage = 'The inspection report server is not responding. This may be due to network restrictions accessing Chinese servers.';
+        } else if (scrapeError.isNetworkError) {
+          errorMessage = 'Unable to reach the inspection report server. The service may be temporarily unavailable or blocked in your region.';
+        }
+      }
+      
       return NextResponse.json({
         success: false,
         data: null,
-        error: 'Failed to fetch inspection report. Please try again later.',
+        error: errorMessage,
       });
     }
   } catch (error) {
@@ -181,10 +203,20 @@ export async function POST(
         vehicle.inspectionReportLink
       );
 
+      // Validate required fields
+      if (!extractedData.overallGrade) {
+        console.error('OpenAI extraction failed - no overallGrade found:', extractedData);
+        return NextResponse.json({
+          success: false,
+          data: null,
+          error: 'Failed to extract inspection data. The report format may have changed. Please try again.',
+        });
+      }
+
       // Save to database
       const saved = await prisma.inspectionReport.create({
         data: {
-          vehicleId,
+          vehicle: { connect: { id: vehicleId } },
           sourceUrl: vehicle.inspectionReportLink,
           overallGrade: extractedData.overallGrade,
           inspectionDate: extractedData.inspectionDate || null,
@@ -219,10 +251,22 @@ export async function POST(
       });
     } catch (scrapeError) {
       console.error('Failed to scrape inspection report:', scrapeError);
+      
+      // Provide more helpful error messages based on error type
+      let errorMessage = 'Failed to fetch inspection report. Please try again later.';
+      
+      if (scrapeError instanceof InspectionFetchError) {
+        if (scrapeError.isTimeout) {
+          errorMessage = 'The inspection report server is not responding. This may be due to network restrictions accessing Chinese servers.';
+        } else if (scrapeError.isNetworkError) {
+          errorMessage = 'Unable to reach the inspection report server. The service may be temporarily unavailable or blocked in your region.';
+        }
+      }
+      
       return NextResponse.json({
         success: false,
         data: null,
-        error: 'Failed to fetch inspection report. Please try again later.',
+        error: errorMessage,
       });
     }
   } catch (error) {
