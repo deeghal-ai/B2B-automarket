@@ -80,13 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** I want to brainstorm possible edge cases concerns regarding my app. As you can see people can group vehicles based on certain parameters and then bulk add to quote builder.
-
-But say i did a grouping based on certain parameters and then added to the quote builder and then i come back to browse page and change the grouping and add more bulk cars to quote builder. 
-
-Logically will this work? Since maybe some cars were added from the previous grouping into the cart and from those inventory new groups/buckets are formed when i change the grouping parameters and then if i add from here again will there not be conflict with the inventory already added
-
-So we need to take care of it in the design; what do you recommend? If i change grouping then cart/quote builder resets or what approach should we take to ensure we take care of edge cases
+**What I want to work on today:** I want to brainstorm a solution. look currently in browse page one parameter for grouping needs to always be selected. i want a toogle option for grouped and flat listings. grouped mode works exactly like right now but when togggled to flat mode, no grouping is applied and only individual vehicles are displayed which can be selected and added to cart
 
 **Relevant spec file:**
 

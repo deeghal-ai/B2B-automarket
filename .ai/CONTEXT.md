@@ -12,8 +12,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ## Current State
 
 **Last Updated**: December 22, 2024
-**Last Session Focus**: Cart Duplicate Visual Feedback (Grouping Edge Case)
-**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports + Cart UX
+**Last Session Focus**: Grouped/Flat View Toggle for Browse Page
+**Current Phase**: Phase 4 Complete + Inventory Edit + Image Upload + Design Refresh + Inspection Reports + Cart UX + View Toggle
 
 ### What's Been Built
 
@@ -57,6 +57,10 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] InspectionReport database model with caching
 - [x] Inspection report display on vehicle detail page
 - [x] Cart duplicate awareness (visual feedback when vehicles already in cart)
+- [x] Grouped/Flat view toggle on browse page
+- [x] Flat listings API endpoint (POST /api/vehicles/flat) with sorting
+- [x] Flat listings table with sortable columns, checkboxes, add-to-cart
+- [x] View mode persisted in URL and localStorage
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -104,16 +108,29 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 4. **Buyer Features (Phase 4 Complete)**
    - Browse page with dynamic grouping
+   - **NEW: Grouped/Flat View Toggle**:
+     - Toggle between "Grouped" and "Flat" view modes
+     - Grouped: Shows grouped listings by selected parameters (original behavior)
+     - Flat: Table view of individual vehicles with sortable columns
+     - View mode saved to URL and localStorage
+   - **Flat View Features**:
+     - Sortable columns (click header to sort): Make, Year, Mileage, Price
+     - Checkbox selection per row + "Select All" header
+     - Individual "Add to Cart" button per row
+     - Bulk "Add X to Cart" floating action bar when items selected
+     - "In Cart" badge and disabled button for items already in cart
+     - Click row to navigate to vehicle detail page
+     - Pagination (50 items per page)
    - Grouping parameter selector (Make, Model, Variant, Year, Color, Condition, Body Type)
    - Grouped listings showing unit count, price range, mileage range
-   - **NEW**: Vehicles without price display as "RFQ" (Request for Quote)
-   - **NEW**: Incoterm badge (FOB/CIF) displayed next to prices on all buyer pages
+   - Vehicles without price display as "RFQ" (Request for Quote)
+   - Incoterm badge (FOB/CIF) displayed next to prices on all buyer pages
    - Expand groups to see individual vehicles
    - Individual vehicle rows show Make, Model, Year with variant in parentheses
    - Clickable vehicle rows navigate to detail page
    - Select individual vehicles or "Select All" within group
    - Bulk add to cart from groups with visual feedback (green button + "Added X to Cart!")
-   - **NEW**: Cart duplicate awareness:
+   - Cart duplicate awareness:
      - "X in cart" badge on grouped listing cards showing vehicles already in cart
      - "Select All (X already in cart)" indicator in expanded vehicle list
      - "In Cart" badge with shopping cart icon on individual vehicle rows
@@ -213,6 +230,14 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 ### Key Files Modified Recently
 
 ```
+# Grouped/Flat View Toggle (Dec 22, 2024)
+src/components/buyer/view-mode-toggle.tsx     # NEW: Toggle component for Grouped/Flat modes
+src/components/buyer/flat-listings-table.tsx  # NEW: Table with sortable columns, checkboxes, add-to-cart
+src/app/api/vehicles/flat/route.ts            # NEW: Flat listings API with sorting & filters
+src/components/buyer/buyer-browse-client.tsx  # Added view mode state, flat view integration, URL sync
+src/types/grouping.ts                         # Added FlatListingsResponse, VehicleWithSellerInfo types
+src/lib/grouping-query.ts                     # Exported buildWhereClause for reuse
+
 # Cart Duplicate Visual Feedback (Dec 22, 2024)
 src/components/buyer/grouped-listing-card.tsx  # Added cart awareness: "X in cart" badge, enhanced feedback messages
 src/components/buyer/vehicle-selection-list.tsx # Added "In Cart" badges, "X already in cart" counter

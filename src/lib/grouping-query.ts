@@ -55,8 +55,9 @@ export function validateGroupingFields(fields: string[]): GroupingField[] {
 
 /**
  * Builds WHERE clause conditions and parameters
+ * Exported for use by flat listings API as well
  */
-function buildWhereClause(filters?: GroupingFilters): {
+export function buildWhereClause(filters?: GroupingFilters): {
   conditions: string[];
   params: (string | number)[];
 } {

@@ -136,3 +136,64 @@ export interface VehicleWithImage {
   primaryImage: string | null;
 }
 
+/**
+ * Extended vehicle with seller info for flat listings
+ */
+export interface VehicleWithSellerInfo extends VehicleWithImage {
+  sellerName: string;
+}
+
+/**
+ * Valid sort fields for flat listings
+ */
+export type FlatSortField = 
+  | 'make'
+  | 'model'
+  | 'year'
+  | 'price'
+  | 'mileage'
+  | 'createdAt';
+
+/**
+ * Valid sort orders
+ */
+export type SortOrder = 'asc' | 'desc';
+
+/**
+ * Request body for flat listings API
+ */
+export interface FlatListingsRequest {
+  filters?: {
+    minPrice?: number;
+    maxPrice?: number;
+    minYear?: number;
+    maxYear?: number;
+    minMileage?: number;
+    maxMileage?: number;
+    country?: string;
+    make?: string;
+    model?: string;
+    condition?: string;
+    bodyType?: string;
+    fuelType?: string;
+    transmission?: string;
+  };
+  sortBy?: FlatSortField;
+  sortOrder?: SortOrder;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * Response from flat listings API
+ */
+export interface FlatListingsResponse {
+  vehicles: VehicleWithSellerInfo[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+

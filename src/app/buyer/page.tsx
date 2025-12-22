@@ -8,7 +8,7 @@ export default function BuyerBrowsePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Browse Vehicles</h1>
         <p className="text-muted-foreground">
-          Select grouping parameters to find bulk purchase opportunities
+          View grouped listings for bulk purchase or browse individual vehicles
         </p>
       </div>
 
