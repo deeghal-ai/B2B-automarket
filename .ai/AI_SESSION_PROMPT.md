@@ -80,7 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** i want to add a sinle vehicle addition form for sellers; bulk upload is already implemented. add a sinle vehicle addition which essentially opens the same one page form which opens when we edit one vehicle in the inventory tab but this should just add the one vehicle to inventory
+**What I want to work on today:** explain to me in high level how this application is structured and which files do what broadly so that i can give a high level view of the files and technicalities
 
 **Relevant spec file:**
 
