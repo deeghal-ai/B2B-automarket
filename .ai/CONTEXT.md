@@ -11,9 +11,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 ## Current State
 
-**Last Updated**: December 22, 2024
-**Last Session Focus**: Vercel Deployment Setup
-**Current Phase**: Phase 4 Complete + Vercel Deployment
+**Last Updated**: January 07, 2026
+**Last Session Focus**: Fuzzy Logic Implementation Design for Bulk Upload
+**Current Phase**: Phase 4 Complete + Fuzzy Matching Feature Designed
 **Production URL**: https://b2-b-automarket.vercel.app
 
 ### What's Been Built
@@ -63,6 +63,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] Flat listings table with sortable columns, checkboxes, add-to-cart
 - [x] View mode persisted in URL and localStorage
 - [x] **Vercel deployment configured with serverless Chromium**
+- [x] **DESIGNED: Fuzzy matching for Make/Model/Variant validation** (implementation files ready)
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -107,6 +108,13 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - Currency dropdown fallback (USD, AED, CNY, EUR) when not mapped from Excel
      - Incoterm toggle (FOB/CIF) when not mapped from Excel
      - Inspection Report Link field (optional URL)
+   - **DESIGNED (Ready to Implement)**: Fuzzy matching for Make/Model/Variant
+     - New Step 3 "Review Matches" between Map Columns and Import
+     - Validates Make/Model/Variant against master database
+     - Auto-corrects typos (≥90% match)
+     - Flags for review (70-89% match)
+     - Rejects no-match (<70% match)
+     - See files in `/mnt/user-data/outputs/` for implementation
 
 4. **Buyer Features (Phase 4 Complete)**
    - Browse page with dynamic grouping
@@ -196,134 +204,132 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - Price/currency/incoterm relationship validation
      - Success redirect to inventory after save
    - **Image upload** using Supabase Storage:
-     - Drag-and-drop or click to upload (JPEG, PNG, WebP)
-     - Max 10 images per vehicle, 5MB per image
-     - Set primary image (shown in listings)
-     - Delete images with confirmation
-     - Upload progress indicator
-     - Race condition fix: uses transaction for parallel uploads
-     - UI handles multiple primary images gracefully
-   - API endpoints:
-     - GET /api/seller/vehicles (list with filters, pagination)
-     - PATCH /api/seller/vehicles/[id] (update status OR full vehicle update)
-     - DELETE /api/seller/vehicles/[id] (remove vehicle)
-     - POST /api/seller/vehicles/bulk (bulk publish/unpublish/delete)
-     - POST /api/seller/vehicles/[id]/images (upload image)
-     - GET /api/seller/vehicles/[id]/images (list images)
-     - PATCH /api/seller/vehicles/[id]/images/[imageId] (set primary)
-     - DELETE /api/seller/vehicles/[id]/images/[imageId] (delete image)
-     - GET /api/inspection/[vehicleId] (fetch cached or scrape new inspection report)
-     - POST /api/inspection/[vehicleId] (force re-scrape inspection report)
-
-### What's Broken / Known Issues
-
-- Sign out redirect URL may need adjustment (currently redirects to Supabase URL)
-- Save/load column mappings not yet functional (UI exists, needs API routes)
-- **Supabase Storage requires RLS policies** - see `supabase/storage-policies.sql`
+     - Drag-and-drop dropzone on edit page
+     - Multiple file upload with progress indicators
+     - Set primary image functionality
+     - Delete images (removes from storage + database)
+     - Image grid preview with reorder capability (primary shown first)
 
 ---
 
-## Technical Context
+## Fuzzy Matching Implementation (Ready to Integrate)
 
-### Database
-- **Provider**: Supabase (PostgreSQL)
-- **ORM**: Prisma
-- **Schema Status**: ✅ Deployed and working
-- **Recent Changes**: InspectionReport model for caching scraped inspection data
+### Files Created This Session
 
-### Key Files Modified Recently
+| File | Destination | Action |
+|------|-------------|--------|
+| `upload-page-with-fuzzy.tsx` | `src/app/seller/upload/page.tsx` | **REPLACE** |
+| `upload-types-additions.ts` | `src/types/upload.ts` | **APPEND** |
+| `fuzzy-matcher.ts` | `src/lib/fuzzy-matcher.ts` | **CREATE** |
+| `fuzzy-match-review.tsx` | `src/components/seller/fuzzy-match-review.tsx` | **CREATE** |
+| `validate-fuzzy-route.ts` | `src/app/api/upload/validate-fuzzy/route.ts` | **CREATE** |
+| `prisma-schema-addition.prisma` | `prisma/schema.prisma` | **APPEND** |
+| `seed-master-data.ts` | `prisma/seed-master-data.ts` | **CREATE** |
+| `sample-master-vehicle-data.xlsx` | `prisma/data/master-vehicle-data.xlsx` | **CREATE** |
+
+### New Upload Flow (4 Steps)
 
 ```
-# Vercel Deployment (Dec 22, 2024)
-vercel.json                                   # NEW: Vercel config with function settings for inspection API
-next.config.ts                                # Added serverExternalPackages, image remotePatterns
-package.json                                  # Moved @prisma/client to deps, added postinstall script
-src/lib/inspection-scraper.ts                 # Updated to use @sparticuz/chromium on Vercel
-src/types/inventory.ts                        # Added SerializedVehicle types for client components
-src/components/seller/vehicle-edit-form.tsx   # Updated to use SerializedVehicleWithImage type
-src/app/seller/vehicle/[id]/edit/page.tsx     # Fixed Decimal→number serialization type
-.gitignore                                    # Added *.deb, *.exe to prevent large file commits
+BEFORE: Upload → Map Columns → Import (3 steps)
+AFTER:  Upload → Map Columns → Review Matches → Import (4 steps)
+                                    ↑
+                               NEW STEP
+```
 
-# Grouped/Flat View Toggle (Dec 22, 2024)
-src/components/buyer/view-mode-toggle.tsx     # NEW: Toggle component for Grouped/Flat modes
-src/components/buyer/flat-listings-table.tsx  # NEW: Table with sortable columns, checkboxes, add-to-cart
-src/app/api/vehicles/flat/route.ts            # NEW: Flat listings API with sorting & filters
-src/components/buyer/buyer-browse-client.tsx  # Added view mode state, flat view integration, URL sync
-src/types/grouping.ts                         # Added FlatListingsResponse, VehicleWithSellerInfo types
-src/lib/grouping-query.ts                     # Exported buildWhereClause for reuse
+### Fuzzy Matching Thresholds
 
-# Cart Duplicate Visual Feedback (Dec 22, 2024)
-src/components/buyer/grouped-listing-card.tsx  # Added cart awareness: "X in cart" badge, enhanced feedback messages
-src/components/buyer/vehicle-selection-list.tsx # Added "In Cart" badges, "X already in cart" counter
+| Confidence | Status | Action |
+|------------|--------|--------|
+| 100% | Exact Match | Pass through |
+| 90-99% | Auto-Corrected | Silently fixed |
+| 70-89% | Needs Review | User confirms |
+| <70% | No Match | Cannot import |
 
-# Inspection Report Feature (Dec 22, 2024)
-prisma/schema.prisma                          # Added InspectionReport model
-src/types/inspection.ts                       # NEW: TypeScript types for inspection data
-src/lib/inspection-scraper.ts                 # Puppeteer + OpenAI GPT-4o-mini scraper (renders JS pages)
-src/app/api/inspection/[vehicleId]/route.ts   # GET/POST API with caching + validation
-src/components/buyer/inspection-report-card.tsx # Inspection report UI component (green checkmark design)
-src/app/buyer/vehicle/[id]/page.tsx           # Added InspectionReportCard integration
+### Database Model to Add
 
-# Inspection Report Bug Fixes (Dec 22, 2024)
-src/app/api/inspection/[vehicleId]/route.ts   # Fixed Prisma relation syntax (vehicle: { connect: {} })
-src/lib/inspection-scraper.ts                 # Added Puppeteer-core for JS-rendered pages, Chrome path detection
+```prisma
+model MasterVehicleData {
+  id        String   @id @default(cuid())
+  make      String
+  model     String
+  variant   String
+  
+  @@unique([make, model, variant])
+  @@index([make])
+  @@index([make, model])
+}
+```
 
-# Design Refresh (Dec 22, 2024)
-src/app/globals.css                    # Updated CSS variables: dark navy primary, teal stock, green success
-src/components/ui/button.tsx           # Refined button variants with shadow-sm
-src/components/ui/badge.tsx            # Added stock and success badge variants
-src/components/buyer/grouped-listing-card.tsx  # Stock badge for unit counts
-src/components/buyer/search-filters.tsx        # Polished filter bar styling
-src/components/seller/inventory-table.tsx      # Success badge for published status
-src/components/shared/header.tsx               # Refined nav styling
-src/app/page.tsx                               # Updated landing page hero
+---
 
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: PostgreSQL (Supabase)
+- **ORM**: Prisma
+- **Auth**: Supabase Auth
+- **Storage**: Supabase Storage (vehicle images)
+- **State**: Zustand (cart), React state (forms)
+- **Excel Parsing**: xlsx library
+- **Inspection Scraping**: Puppeteer-core + OpenAI GPT-4o-mini
+- **Deployment**: Vercel
+
+---
+
+## Key Files and Directories
+
+```
 src/
-├── types/
-│   ├── upload.ts                   # ValidationError, TransformedVehicle, ImportState types
-│   ├── inventory.ts                # VehicleWithImage, VehiclesResponse, InventoryFiltersState types
-│   └── grouping.ts                 # NEW: GroupingField, GroupedListing, request/response types
-├── lib/
-│   ├── excel-parser.ts             # Excel/CSV parsing with xlsx
-│   ├── column-auto-detect.ts       # Auto-detect column name aliases
-│   ├── vehicle-validator.ts        # Row validation & transformation with enum normalization
-│   ├── grouping-query.ts           # NEW: Dynamic SQL query builder for grouping
-│   ├── prisma.ts                   # Prisma client singleton
-│   ├── utils.ts                    # Utility functions + enum labels
-│   └── supabase/
-│       ├── client.ts               # Browser Supabase client
-│       ├── server.ts               # Server Supabase client
-│       └── middleware.ts           # Session refresh logic
-├── components/
-│   ├── ui/
-│   │   ├── collapsible.tsx         # Simple collapsible component
-│   │   └── progress.tsx            # Progress bar component
+├── app/
+│   ├── api/
+│   │   ├── upload/
+│   │   │   ├── validate/route.ts   # POST validation endpoint
+│   │   │   └── import/route.ts     # POST import endpoint
+│   │   ├── seller/
+│   │   │   └── vehicles/
+│   │   │       ├── route.ts        # GET list vehicles with filters/pagination
+│   │   │       ├── [id]/
+│   │   │       │   ├── route.ts    # PATCH (status OR full update) / DELETE single vehicle
+│   │   │       │   └── images/
+│   │   │       │       ├── route.ts       # NEW: POST upload / GET list images
+│   │   │       │       └── [imageId]/route.ts # NEW: PATCH set primary / DELETE image
+│   │   │       └── bulk/route.ts   # POST bulk actions
+│   │   └── vehicles/
+│   │       ├── grouped/route.ts    # NEW: POST dynamic grouping endpoint
+│   │       └── by-ids/route.ts     # NEW: POST fetch vehicles by IDs
 │   ├── seller/
-│   │   ├── upload-dropzone.tsx     # Drag-and-drop file upload
-│   │   ├── data-preview.tsx        # Preview table for parsed data
-│   │   ├── column-mapper.tsx       # Column mapping UI with dropdowns
-│   │   ├── validation-errors.tsx   # Collapsible error list grouped by row
-│   │   ├── import-progress.tsx     # Import progress with spinner
-│   │   ├── import-summary.tsx      # Success/error summary with actions
-│   │   ├── inventory-client.tsx    # NEW: Client wrapper for inventory with state management
-│   │   ├── inventory-table.tsx     # NEW: Data table with vehicle rows
-│   │   ├── inventory-filters.tsx   # NEW: Status filter + search input
-│   │   ├── status-toggle.tsx       # Publish/Unpublish button
-│   │   ├── bulk-actions.tsx        # Bulk action buttons (publish/unpublish/delete)
-│   │   ├── vehicle-edit-form.tsx   # Edit form with all vehicle fields
-│   │   └── vehicle-image-upload.tsx # Image upload with dropzone and grid
-supabase/
-└── storage-policies.sql            # NEW: RLS policies for vehicle-images bucket
-│   ├── shared/
-│   │   ├── header.tsx              # Main header with nav
-│   │   └── cart-badge.tsx          # Cart icon with count
+│   │   ├── layout.tsx              # Seller sidebar layout
+│   │   ├── page.tsx                # Seller dashboard
+│   │   ├── upload/
+│   │   │   └── page.tsx            # Full 3-step wizard with validation & import
+│   │   ├── inventory/
+│   │   │   └── page.tsx            # Inventory management page
+│   │   └── vehicle/
+│   │       └── [id]/
+│   │           └── edit/page.tsx   # NEW: Edit vehicle page
 │   └── buyer/
-│       ├── add-to-cart-button.tsx  # Add to cart button
-│       ├── grouping-selector.tsx   # Checkbox UI for selecting grouping params
-│       ├── grouped-listing-card.tsx # Card for each grouped listing (with cart feedback)
-│       ├── vehicle-selection-list.tsx # Expandable list within group (clickable rows)
-│       ├── buyer-browse-client.tsx # Client wrapper for browse page
-│       └── search-filters.tsx      # NEW: Collapsible filter panel with all filters
+│       ├── layout.tsx              # Buyer layout
+│       ├── page.tsx                # Browse vehicles
+│       ├── cart/page.tsx           # Shopping cart
+│       └── vehicle/[id]/page.tsx   # Vehicle detail
+├── components/
+│   ├── seller/
+│   │   ├── upload-dropzone.tsx     # File dropzone with validation
+│   │   ├── data-preview.tsx        # Table showing first 5 rows
+│   │   ├── column-mapper.tsx       # Mapping interface + pricing section
+│   │   ├── validation-errors.tsx   # Error list grouped by row
+│   │   ├── import-progress.tsx     # Progress indicator
+│   │   ├── import-summary.tsx      # Success/error summary
+│   │   ├── vehicle-form.tsx        # Full edit form with sections
+│   │   └── vehicle-image-upload.tsx # NEW: Image upload component
+│   ├── buyer/
+│   │   ├── grouping-selector.tsx   # Parameter checkbox selector
+│   │   ├── grouped-listing-card.tsx # Card for grouped vehicles (shows in-cart badge)
+│   │   ├── vehicle-selection-list.tsx # Expandable list within group (clickable rows)
+│   │   ├── buyer-browse-client.tsx # Client wrapper for browse page
+│   │   └── search-filters.tsx      # NEW: Collapsible filter panel with all filters
 ├── app/
 │   ├── api/
 │   │   ├── upload/
@@ -374,58 +380,25 @@ OPENAI_API_KEY=your_openai_key_here
 
 **⚠️ Important for Vercel**: When adding env vars in Vercel dashboard, do NOT include quotes around values. Local `.env` files can have quotes, but Vercel UI expects raw values.
 
-### Vercel Deployment
+---
 
-**Production URL**: https://b2-b-automarket.vercel.app
+## Known Issues
 
-**Deployment Configuration**:
-- Framework: Next.js (auto-detected)
-- Build Command: `prisma generate && next build` (via package.json)
-- Install Command: `npm install` (triggers postinstall → prisma generate)
-
-**Serverless Function Config** (`vercel.json`):
-- Inspection API (`/api/inspection/[vehicleId]`): 1024MB memory, 60s timeout
-- Uses `@sparticuz/chromium` for headless Chrome on Lambda
-
-**Required Vercel Environment Variables**:
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | Supabase pooler connection (port 6543) |
-| `DIRECT_URL` | Supabase direct connection (port 5432) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous key |
-| `OPENAI_API_KEY` | OpenAI API key for inspection scraping |
-
-### Dependencies Installed
-```json
-{
-  "@prisma/client": "^5.22.0",
-  "@supabase/ssr": "latest",
-  "@supabase/supabase-js": "latest",
-  "@tanstack/react-query": "latest",
-  "xlsx": "latest",
-  "zustand": "latest",
-  "openai": "^4.73.0",
-  "puppeteer-core": "latest"
-}
-```
-
-**Note**: Puppeteer-core requires Chrome/Chromium installed on the system. On Linux/WSL:
-```bash
-sudo apt install chromium-browser -y
-```
+1. **Signout redirect**: Redirects to Supabase URL instead of /login (low priority)
+2. **Large file uploads**: May time out for files with 10,000+ rows (consider chunking)
 
 ---
 
-## Architecture Decisions Made
+## Important Business Context
 
-1. **Per-seller grouping**: Cars are always grouped within a single seller's inventory
+1. **Sellers are Chinese car exporters**: They have their own Excel formats with Chinese column names
 2. **Column mapping for uploads**: Sellers have different Excel formats, so we provide a mapping UI
 3. **Cart supports multiple sellers**: Buyers can add cars from different sellers to one cart
 4. **Price shown as range**: Groups show min-max price with option to see per-unit
 5. **Zustand + localStorage for cart**: Fast local updates, persists across refreshes
 6. **Supabase for auth + storage**: Unified platform for MVP
 7. **Client-side Excel parsing**: Using xlsx library in browser for immediate feedback
+8. **Fuzzy matching for data quality**: Sellers may have typos in Make/Model/Variant - fuzzy matching validates against master data
 
 ---
 
@@ -583,24 +556,48 @@ const result = await response.json();
 const refreshResponse = await fetch(`/api/inspection/${vehicleId}`, { method: 'POST' });
 ```
 
+### Fuzzy Matching API (NEW - Ready to Implement)
+```typescript
+// Validate Make/Model/Variant against master data
+const response = await fetch('/api/upload/validate-fuzzy', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    vehicles: [
+      { rowIndex: 0, make: 'Honds', model: 'Acord', variant: 'EX' },
+      { rowIndex: 1, make: 'Toyota', model: 'Camry', variant: 'LE' },
+    ],
+  }),
+});
+const { summary, results } = await response.json();
+// summary = { total: 2, valid: 1, needsReview: 1, invalid: 0 }
+// results = VehicleMMVValidation[]
+```
+
 ---
 
 ## Next Session Should Focus On
 
-**Priority 1: Checkout Flow (Phase 5)**
+**Priority 1: Implement Fuzzy Matching**
+- Copy files from this session's outputs to project
+- Run Prisma migration for MasterVehicleData model
+- Seed master data from Excel file
+- Test upload flow with 4-step wizard
+
+**Priority 2: Checkout Flow (Phase 5)**
 - Checkout page with order summary
 - Contact/notes field
 - Submit inquiry (create order)
 - Order confirmation page
 - Spec file: `specs/features/buyer-cart.md`
 
-**Priority 2: Save/Load Column Mappings**
+**Priority 3: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings
 - Save mapping with custom name
 - Load saved mappings dropdown
 - Set default mapping option
 
-**Priority 3: Order Management**
+**Priority 4: Order Management**
 - Buyer order history
 - Seller incoming orders view
 - Order status updates
@@ -618,3 +615,4 @@ const refreshResponse = await fetch(`/api/inspection/${vehicleId}`, { method: 'P
 - The `xlsx` package is already installed for Excel parsing
 - Cart is client-side only (Zustand) - no server sync needed for MVP
 - Upload wizard uses client-side state management for multi-step flow
+- **Fuzzy matching files are ready in outputs** - just need to copy and integrate

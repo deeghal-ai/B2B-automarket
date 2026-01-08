@@ -80,7 +80,11 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** explain to me in high level how this application is structured and which files do what broadly so that i can give a high level view of the files and technicalities
+**What I want to work on today:** after the latest implementation i am getting like this. clicking on the "skip this row" and "accept and continue", nothing really happens
+
+please debug thorougly. 
+also why does it say 2 of 6 rows ready to import
+when above it says 3 were ready to import
 
 **Relevant spec file:**
 

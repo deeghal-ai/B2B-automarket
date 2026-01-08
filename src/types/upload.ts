@@ -187,3 +187,38 @@ export interface ImportResponse {
 // Import state for UI
 export type ImportState = 'idle' | 'validating' | 'validated' | 'importing' | 'complete' | 'error';
 
+// types for fuzzy validation
+
+export type MatchStatus = 'exact' | 'auto_corrected' | 'needs_review' | 'no_match';
+
+export interface FuzzyMatchResult {
+  originalValue: string;
+  matchedValue: string | null;
+  confidence: number;
+  status: MatchStatus;
+  suggestions: string[];
+}
+
+export interface VehicleMMVValidation {
+  rowIndex: number;
+  makeResult: FuzzyMatchResult;
+  modelResult: FuzzyMatchResult;
+  variantResult: FuzzyMatchResult;
+  isValid: boolean;
+  needsReview: boolean;
+  correctedMake: string | null;
+  correctedModel: string | null;
+  correctedVariant: string | null;
+}
+
+export interface FuzzyValidateResponse {
+  success: boolean;
+  summary: {
+    total: number;
+    valid: number;
+    needsReview: number;
+    invalid: number;
+  };
+  results: VehicleMMVValidation[];
+}
+

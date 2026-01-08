@@ -175,6 +175,37 @@
 
 ---
 
+## 🔲 In Progress: Fuzzy Matching for Bulk Upload
+
+### ✅ P0 - Design & Architecture (Complete - Jan 7, 2026)
+- [x] Analyze feasibility of fuzzy logic for Make/Model/Variant
+- [x] Design 4-step upload wizard (Upload → Map → Review Matches → Import)
+- [x] Create fuzzy matching algorithm (Levenshtein distance)
+- [x] Define confidence thresholds (90% auto-correct, 70% review, <70% reject)
+- [x] Design MasterVehicleData Prisma model
+- [x] Create all implementation files (ready to integrate)
+
+### P1 - Implementation (Ready to Start)
+Files created, need to copy to project:
+- [ ] Add `MasterVehicleData` model to `prisma/schema.prisma`
+- [ ] Run Prisma migration: `npx prisma migrate dev --name add_master_vehicle_data`
+- [ ] Copy `fuzzy-matcher.ts` to `src/lib/fuzzy-matcher.ts`
+- [ ] Copy `fuzzy-match-review.tsx` to `src/components/seller/fuzzy-match-review.tsx`
+- [ ] Create `src/app/api/upload/validate-fuzzy/route.ts`
+- [ ] Append fuzzy types to `src/types/upload.ts`
+- [ ] Replace `src/app/seller/upload/page.tsx` with 4-step version
+- [ ] Place master data Excel in `prisma/data/master-vehicle-data.xlsx`
+- [ ] Run seed script: `npx ts-node prisma/seed-master-data.ts`
+- [ ] Test end-to-end upload flow with typos
+
+### P2 - Polish (After Initial Integration)
+- [ ] Admin UI for managing master vehicle data
+- [ ] Alias support (e.g., "本田" → "Honda")
+- [ ] Bulk upload for master data
+- [ ] Analytics: track auto-corrections and rejections
+
+---
+
 ## Phase 5: Checkout
 
 ### P1 - Basic Checkout
@@ -244,4 +275,5 @@
 | Dec 22, 2024 | Grouped/Flat View Toggle | ✅ View mode toggle, flat listings API with sorting, table with sortable columns/checkboxes/add-to-cart, URL state |
 | Dec 22, 2024 | Inspection Report Bug Fixes | ✅ Fixed Prisma relation syntax, added Puppeteer-core for JS-rendered pages, validation before save |
 | Dec 22, 2024 | Vercel Deployment | ✅ @sparticuz/chromium for serverless, vercel.json, env vars, TypeScript fixes, deployed to production |
-| Next session | Phase 5 Checkout | Checkout flow, order management |
+| Jan 07, 2026 | Fuzzy Matching Design | ✅ Designed fuzzy logic for Make/Model/Variant, created all implementation files, proof of concept tested |
+| Next session | Fuzzy Matching Integration | Copy files to project, run migrations, seed master data, test flow |

@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, FileSpreadsheet, Columns3, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileSpreadsheet, Columns3, CheckCircle2, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadDropzone } from '@/components/seller/upload-dropzone';
@@ -11,6 +11,7 @@ import { ColumnMapper } from '@/components/seller/column-mapper';
 import { ValidationErrors } from '@/components/seller/validation-errors';
 import { ImportProgress } from '@/components/seller/import-progress';
 import { ImportSummary } from '@/components/seller/import-summary';
+import { FuzzyMatchReview } from '@/components/seller/fuzzy-match-review';
 import { ParsedExcel } from '@/lib/excel-parser';
 import { 
   ColumnMappingState, 
@@ -21,9 +22,12 @@ import {
   ValidateResponse,
   ImportResponse,
   ImportDefaults,
+  VehicleMMVValidation,
+  FuzzyValidateResponse,
 } from '@/types/upload';
 
-type UploadStep = 'upload' | 'mapping' | 'import';
+// Updated to include 'fuzzy-review' step
+type UploadStep = 'upload' | 'mapping' | 'fuzzy-review' | 'import';
 
 export default function SellerUploadPage() {
   const [currentStep, setCurrentStep] = useState<UploadStep>('upload');
@@ -44,6 +48,11 @@ export default function SellerUploadPage() {
   const [importResult, setImportResult] = useState<{ imported: number; failed: number; errors: Array<{ index: number; message: string }> } | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  // NEW: Fuzzy matching state
+  const [fuzzyResults, setFuzzyResults] = useState<VehicleMMVValidation[]>([]);
+  const [fuzzyValidating, setFuzzyValidating] = useState(false);
+  const [acceptedFuzzyRows, setAcceptedFuzzyRows] = useState<VehicleMMVValidation[]>([]);
+
   const handleFileParsed = (data: ParsedExcel) => {
     setParsedData(data);
     // Reset all state when new file is uploaded
@@ -55,6 +64,9 @@ export default function SellerUploadPage() {
     setInvalidRowCount(0);
     setImportResult(null);
     setErrorMessage(null);
+    // Reset fuzzy state
+    setFuzzyResults([]);
+    setAcceptedFuzzyRows([]);
   };
 
   const handleClear = () => {
@@ -67,6 +79,9 @@ export default function SellerUploadPage() {
     setInvalidRowCount(0);
     setImportResult(null);
     setErrorMessage(null);
+    // Reset fuzzy state
+    setFuzzyResults([]);
+    setAcceptedFuzzyRows([]);
   };
 
   const handleContinueToMapping = () => {
@@ -88,20 +103,113 @@ export default function SellerUploadPage() {
     []
   );
 
-  const handleContinueToImport = async () => {
+  // NEW: Handle continue from mapping to fuzzy review
+  const handleContinueToFuzzyReview = async () => {
     if (!mappingValidation.isValid || !parsedData) return;
 
+    setFuzzyValidating(true);
+    setErrorMessage(null);
+
+    try {
+      // Extract Make/Model/Variant from mapped data for fuzzy validation
+      const vehicles = parsedData.rows.map((row, index) => ({
+        rowIndex: index,
+        make: String(row[columnMapping.make as string] || '').trim(),
+        model: String(row[columnMapping.model as string] || '').trim(),
+        variant: String(row[columnMapping.variant as string] || '').trim(),
+      }));
+
+      const response = await fetch('/api/upload/validate-fuzzy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicles }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Fuzzy validation failed');
+      }
+
+      const result: FuzzyValidateResponse = await response.json();
+      
+      setFuzzyResults(result.results);
+      setCurrentStep('fuzzy-review');
+    } catch (error) {
+      console.error('Fuzzy validation error:', error);
+      setErrorMessage(error instanceof Error ? error.message : 'Fuzzy validation failed');
+    } finally {
+      setFuzzyValidating(false);
+    }
+  };
+
+  // NEW: Handle back from fuzzy review to mapping
+  const handleBackToMappingFromFuzzy = () => {
+    setCurrentStep('mapping');
+    setFuzzyResults([]);
+    setAcceptedFuzzyRows([]);
+  };
+
+  // NEW: Handle fuzzy review acceptance and continue to import
+  const handleFuzzyAccept = async (accepted: VehicleMMVValidation[]) => {
+    if (!parsedData) return;
+
+    setAcceptedFuzzyRows(accepted);
     setCurrentStep('import');
     setImportState('validating');
     setErrorMessage(null);
 
     try {
-      // Call validation API
+      // Create a map of row corrections from fuzzy matching
+      const corrections = new Map<number, { make?: string; model?: string; variant?: string }>();
+      accepted.forEach(row => {
+        const correction: { make?: string; model?: string; variant?: string } = {};
+        if (row.correctedMake && row.correctedMake !== row.makeResult.originalValue) {
+          correction.make = row.correctedMake;
+        }
+        if (row.correctedModel && row.correctedModel !== row.modelResult.originalValue) {
+          correction.model = row.correctedModel;
+        }
+        if (row.correctedVariant && row.correctedVariant !== row.variantResult.originalValue) {
+          correction.variant = row.correctedVariant;
+        }
+        if (Object.keys(correction).length > 0) {
+          corrections.set(row.rowIndex, correction);
+        }
+      });
+
+      // Get the accepted row indices
+      const acceptedRowIndices = new Set(accepted.map(r => r.rowIndex));
+
+      // Filter rows to only include accepted ones and apply corrections
+      const filteredRows = parsedData.rows
+        .map((row, index) => {
+          if (!acceptedRowIndices.has(index)) return null;
+          
+          const correction = corrections.get(index);
+          if (correction) {
+            // Apply fuzzy corrections to the row data
+            const correctedRow = { ...row };
+            if (correction.make && columnMapping.make) {
+              correctedRow[columnMapping.make] = correction.make;
+            }
+            if (correction.model && columnMapping.model) {
+              correctedRow[columnMapping.model] = correction.model;
+            }
+            if (correction.variant && columnMapping.variant) {
+              correctedRow[columnMapping.variant] = correction.variant;
+            }
+            return correctedRow;
+          }
+          return row;
+        })
+        .filter((row): row is Record<string, unknown> => row !== null);
+
+      // Call validation API with corrected/filtered rows
       const response = await fetch('/api/upload/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          rows: parsedData.rows,
+          rows: filteredRows,
           mapping: columnMapping,
           defaults: importDefaults,
         }),
@@ -125,8 +233,9 @@ export default function SellerUploadPage() {
     }
   };
 
-  const handleBackToMapping = () => {
-    setCurrentStep('mapping');
+  // Updated: Back from import now goes to fuzzy-review instead of mapping
+  const handleBackToFuzzyReview = () => {
+    setCurrentStep('fuzzy-review');
     setImportState('idle');
     setValidRows([]);
     setValidationErrors([]);
@@ -184,13 +293,22 @@ export default function SellerUploadPage() {
     setInvalidRowCount(0);
     setImportResult(null);
     setErrorMessage(null);
+    // Reset fuzzy state
+    setFuzzyResults([]);
+    setAcceptedFuzzyRows([]);
   };
 
+  // Updated: isStepComplete now accounts for 4 steps
   const isStepComplete = (step: UploadStep): boolean => {
-    if (step === 'upload') return currentStep !== 'upload';
-    if (step === 'mapping') return currentStep === 'import';
-    if (step === 'import') return importState === 'complete';
-    return false;
+    const stepOrder: UploadStep[] = ['upload', 'mapping', 'fuzzy-review', 'import'];
+    const currentIndex = stepOrder.indexOf(currentStep);
+    const stepIndex = stepOrder.indexOf(step);
+    
+    if (step === 'import') {
+      return importState === 'complete';
+    }
+    
+    return stepIndex < currentIndex;
   };
 
   return (
@@ -210,8 +328,8 @@ export default function SellerUploadPage() {
         </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center gap-2 text-sm">
+      {/* Progress Steps - Updated to 4 steps */}
+      <div className="flex items-center gap-2 text-sm flex-wrap">
         <StepIndicator 
           step={1} 
           label="Upload File" 
@@ -228,6 +346,13 @@ export default function SellerUploadPage() {
         <div className="h-px w-8 bg-muted-foreground/25" />
         <StepIndicator 
           step={3} 
+          label="Review Matches" 
+          isActive={currentStep === 'fuzzy-review'} 
+          isComplete={isStepComplete('fuzzy-review')}
+        />
+        <div className="h-px w-8 bg-muted-foreground/25" />
+        <StepIndicator 
+          step={4} 
           label="Import" 
           isActive={currentStep === 'import'} 
           isComplete={isStepComplete('import')}
@@ -302,32 +427,71 @@ export default function SellerUploadPage() {
               onChange={handleMappingChange}
             />
 
-            {/* Navigation */}
+            {/* Navigation - Updated to go to fuzzy review */}
             <div className="flex justify-between pt-4 border-t">
               <Button variant="outline" onClick={handleBackToUpload} className="gap-2">
                 <ArrowLeft className="h-4 w-4" />
                 Back
               </Button>
               <Button
-                onClick={handleContinueToImport}
-                disabled={!mappingValidation.isValid}
+                onClick={handleContinueToFuzzyReview}
+                disabled={!mappingValidation.isValid || fuzzyValidating}
                 className="gap-2"
               >
-                Validate & Preview
-                <ArrowRight className="h-4 w-4" />
+                {fuzzyValidating ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Validating...
+                  </>
+                ) : (
+                  <>
+                    Review Make/Model/Variant
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
             </div>
+
+            {/* Error message */}
+            {errorMessage && currentStep === 'mapping' && (
+              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
+                <p className="text-red-700 dark:text-red-300 text-sm">{errorMessage}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
 
-      {/* Step 3: Validate & Import */}
+      {/* Step 3: Fuzzy Match Review - NEW STEP */}
+      {currentStep === 'fuzzy-review' && parsedData && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Search className="h-5 w-5" />
+              Step 3: Review Make/Model/Variant Matches
+            </CardTitle>
+            <CardDescription>
+              We&apos;ve validated your vehicle data against our master database. 
+              Review and accept the matches below.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FuzzyMatchReview
+              validationResults={fuzzyResults}
+              onAcceptAll={handleFuzzyAccept}
+              onBack={handleBackToMappingFromFuzzy}
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Step 4: Validate & Import */}
       {currentStep === 'import' && parsedData && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5" />
-              Step 3: Review & Import
+              Step 4: Review & Import
             </CardTitle>
             <CardDescription>
               Review validation results and import vehicles to your inventory.
@@ -397,11 +561,11 @@ export default function SellerUploadPage() {
                   </div>
                 )}
 
-                {/* Navigation */}
+                {/* Navigation - Updated back button */}
                 <div className="flex justify-between pt-4 border-t">
-                  <Button variant="outline" onClick={handleBackToMapping} className="gap-2">
+                  <Button variant="outline" onClick={handleBackToFuzzyReview} className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Mapping
+                    Back to Review
                   </Button>
                   <Button
                     onClick={handleImport}
@@ -450,11 +614,11 @@ export default function SellerUploadPage() {
                 </div>
 
                 <div className="flex justify-center gap-3">
-                  <Button variant="outline" onClick={handleBackToMapping} className="gap-2">
+                  <Button variant="outline" onClick={handleBackToFuzzyReview} className="gap-2">
                     <ArrowLeft className="h-4 w-4" />
-                    Back to Mapping
+                    Back to Review
                   </Button>
-                  <Button onClick={handleContinueToImport} className="gap-2">
+                  <Button onClick={handleFuzzyAccept.bind(null, acceptedFuzzyRows)} className="gap-2">
                     Try Again
                   </Button>
                 </div>

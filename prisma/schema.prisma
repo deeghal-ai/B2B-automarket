@@ -311,3 +311,18 @@ model InspectionReport {
 
   vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 }
+
+
+model MasterVehicleData {
+  id        String   @id @default(cuid())
+  make      String
+  model     String
+  variant   String
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([make, model, variant])
+  @@index([make])
+  @@index([make, model])
+}

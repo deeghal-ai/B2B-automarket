@@ -203,23 +203,23 @@
 ### [DECISION-012] Field-to-Column Mapping UI (Inverted)
 **Date**: 2024-12-20
 **Status**: Accepted
-**Context**: Should the mapping UI show "Excel Column → System Field" or "System Field → Excel Column"?
-**Decision**: Show system fields on left, Excel column dropdown on right (field→column).
+**Context**: How to present the column mapping interface to users?
+**Decision**: Show system fields on left with dropdown to select Excel column on right.
 **Rationale**:
-- Clearer for users: "What data goes into Make? Select from your columns"
-- Required fields are always visible (not hidden in unselected columns)
-- Easier to see which required fields are missing
-- More intuitive mental model
+- More intuitive: "What Excel column contains the Make?"
+- Easier to ensure all required fields are mapped
+- Visual validation of required vs optional fields
+- Alternative (column-first) was confusing in testing
 **Consequences**:
-- Mapping state stored as `{ make: 'Brand', model: 'Model' }` (field→header)
-- Auto-detection logic iterates fields and finds matching headers
+- Need to track mappings as VehicleField → ExcelHeader
+- Validation checks that all required fields have a mapping
 
 ---
 
-### [DECISION-013] PostgreSQL Enum Filter Casting
+### [DECISION-013] Enum Filtering via Text Cast
 **Date**: 2024-12-21
 **Status**: Accepted
-**Context**: When filtering by enum fields (condition, bodyType, fuelType, transmission) in raw SQL queries, the comparison was failing silently.
+**Context**: PostgreSQL enum filters weren't working in dynamic SQL queries.
 **Decision**: Cast enum columns to text for comparison: `v."fuelType"::text = $1`
 **Rationale**:
 - PostgreSQL enums need explicit casting when comparing with string parameters
@@ -408,6 +408,36 @@
 **Consequences**:
 - Proper Prisma client generation on Vercel
 - Slightly larger production bundle (expected)
+
+---
+
+### [DECISION-024] Fuzzy Matching for Make/Model/Variant Validation
+**Date**: 2026-01-07
+**Status**: Accepted
+**Context**: Sellers uploading vehicle data via Excel often have typos or variations in Make/Model/Variant fields (e.g., "Honds" instead of "Honda", "CRV" instead of "CR-V"). Client requested auto-identification and correction of such errors.
+**Decision**: Implement fuzzy matching validation against a master vehicle database as a new step in the upload flow.
+**Rationale**:
+- Industry standard practice in automotive marketplaces (Cars.com, AutoTrader, CarDekho all use this)
+- Significantly improves data quality and consistency
+- Reduces upload failures due to minor typos
+- Chinese sellers may have romanization variations that need normalization
+- Levenshtein distance algorithm provides reliable string similarity matching
+- Cascading validation (Make → Model → Variant) ensures logical consistency
+**Implementation**:
+- New `MasterVehicleData` Prisma model stores valid Make/Model/Variant combinations
+- Pure TypeScript fuzzy matcher (no external dependencies) using Levenshtein distance
+- 4-step upload wizard: Upload → Map Columns → **Review Matches** → Import
+- Confidence thresholds:
+  - ≥90%: Auto-correct silently
+  - 70-89%: Flag for user review with suggestions
+  - <70%: No match, cannot import
+- Master data cached in memory (1 hour TTL) for performance
+**Consequences**:
+- Additional step in upload flow (but improves data quality)
+- Requires maintaining master vehicle data (can be seeded from Excel)
+- ~3-5 days implementation effort
+- New files: `fuzzy-matcher.ts`, `fuzzy-match-review.tsx`, `validate-fuzzy/route.ts`
+- Database migration needed for `MasterVehicleData` model
 
 ---
 
