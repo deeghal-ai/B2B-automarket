@@ -239,12 +239,14 @@ interface SellerInfo {
  * @param mapping - Column mapping from vehicle field to Excel header
  * @param sellerInfo - Seller's city/country for defaults
  * @param defaults - Default values for currency/incoterm when not mapped
+ * @param existingVins - Set of VINs that already exist in the database
  */
 export function validateAndTransformRows(
   rows: Record<string, unknown>[],
   mapping: ColumnMappingState,
   sellerInfo: SellerInfo,
-  defaults?: ImportDefaults
+  defaults?: ImportDefaults,
+  existingVins?: Set<string>
 ): ValidationResult {
   const validRows: TransformedVehicle[] = [];
   const errors: ValidationError[] = [];
@@ -372,6 +374,16 @@ export function validateAndTransformRows(
       }
     } else {
       transformed.vin = generatePlaceholderVin();
+    }
+
+    // Check for duplicate VIN in database
+    if (existingVins && transformed.vin && existingVins.has(transformed.vin)) {
+      rowErrors.push({
+        row: rowNum,
+        field: 'VIN',
+        message: 'VIN already exists in inventory',
+        value: transformed.vin,
+      });
     }
 
     // ===== Price, Currency, Incoterm handling =====

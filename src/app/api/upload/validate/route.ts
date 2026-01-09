@@ -84,11 +84,26 @@ export async function POST(request: Request) {
       }
     }
 
+    // Extract VINs from rows to check for existing duplicates
+    const vinsToCheck = rows
+      .map(row => mapping.vin ? String(row[mapping.vin] || '').trim().toUpperCase() : null)
+      .filter((vin): vin is string => vin !== null && vin !== '');
+
+    // Query database for existing VINs
+    let existingVinSet = new Set<string>();
+    if (vinsToCheck.length > 0) {
+      const existingVins = await prisma.vehicle.findMany({
+        where: { vin: { in: vinsToCheck } },
+        select: { vin: true },
+      });
+      existingVinSet = new Set(existingVins.map(v => v.vin));
+    }
+
     // Validate and transform rows
     const result = validateAndTransformRows(rows, mapping, {
       city: dbUser.seller.city,
       country: dbUser.seller.country,
-    }, defaults);
+    }, defaults, existingVinSet);
 
     const response: ValidateResponse = {
       success: true,

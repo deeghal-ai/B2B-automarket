@@ -80,11 +80,7 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** after the latest implementation i am getting like this. clicking on the "skip this row" and "accept and continue", nothing really happens
-
-please debug thorougly. 
-also why does it say 2 of 6 rows ready to import
-when above it says 3 were ready to import
+**What I want to work on today:** i want to implement a validation when uploaqding inventory to check against the database for existing VINs and not allowingh to import the ones that exist already. Plan it in the most efficient way
 
 **Relevant spec file:**
 

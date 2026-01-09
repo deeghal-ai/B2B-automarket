@@ -71,6 +71,7 @@
   - [x] Validate enums (condition, bodyType, fuelType, transmission, drivetrain)
   - [x] Show validation errors with row numbers
   - [x] Auto-skip invalid rows (only valid rows imported)
+  - [x] **VIN duplicate validation** - checks existing VINs in database before import (Jan 9, 2026)
 - [x] Import functionality:
   - [x] Bulk insert to database via Prisma createMany
   - [x] Progress indicator component
@@ -78,7 +79,7 @@
   - [x] Import as DRAFT status
   - [x] Skip duplicates (VIN collision handling)
 - [x] API endpoints:
-  - [x] POST /api/upload/validate
+  - [x] POST /api/upload/validate (now includes VIN duplicate check)
   - [x] POST /api/upload/import
 - [ ] Column mapping persistence (moved to P3):
   - [ ] GET /api/mappings
@@ -276,4 +277,5 @@ Files created, need to copy to project:
 | Dec 22, 2024 | Inspection Report Bug Fixes | ✅ Fixed Prisma relation syntax, added Puppeteer-core for JS-rendered pages, validation before save |
 | Dec 22, 2024 | Vercel Deployment | ✅ @sparticuz/chromium for serverless, vercel.json, env vars, TypeScript fixes, deployed to production |
 | Jan 07, 2026 | Fuzzy Matching Design | ✅ Designed fuzzy logic for Make/Model/Variant, created all implementation files, proof of concept tested |
+| Jan 09, 2026 | VIN Duplicate Validation | ✅ Added VIN duplicate check to validation API, shows existing VINs as errors, auto-excludes from import |
 | Next session | Fuzzy Matching Integration | Copy files to project, run migrations, seed master data, test flow |

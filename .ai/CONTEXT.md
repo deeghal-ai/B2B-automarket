@@ -11,9 +11,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 ## Current State
 
-**Last Updated**: January 07, 2026
-**Last Session Focus**: Fuzzy Logic Implementation Design for Bulk Upload
-**Current Phase**: Phase 4 Complete + Fuzzy Matching Feature Designed
+**Last Updated**: January 09, 2026
+**Last Session Focus**: VIN Duplicate Validation for Bulk Upload
+**Current Phase**: Phase 4 Complete + Fuzzy Matching Feature Designed + VIN Validation
 **Production URL**: https://b2-b-automarket.vercel.app
 
 ### What's Been Built
@@ -64,6 +64,7 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] View mode persisted in URL and localStorage
 - [x] **Vercel deployment configured with serverless Chromium**
 - [x] **DESIGNED: Fuzzy matching for Make/Model/Variant validation** (implementation files ready)
+- [x] **VIN duplicate validation during upload** - checks existing VINs before import
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -115,6 +116,11 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - Flags for review (70-89% match)
      - Rejects no-match (<70% match)
      - See files in `/mnt/user-data/outputs/` for implementation
+   - **NEW**: VIN Duplicate Validation
+     - Checks uploaded VINs against existing database records before import
+     - Shows duplicate VINs as validation errors with row numbers
+     - Automatically excludes duplicate VIN rows from import
+     - Efficient single DB query using `IN` clause
 
 4. **Buyer Features (Phase 4 Complete)**
    - Browse page with dynamic grouping
@@ -579,10 +585,11 @@ const { summary, results } = await response.json();
 ## Next Session Should Focus On
 
 **Priority 1: Implement Fuzzy Matching**
-- Copy files from this session's outputs to project
+- Copy files from previous session's outputs to project
 - Run Prisma migration for MasterVehicleData model
 - Seed master data from Excel file
 - Test upload flow with 4-step wizard
+- Note: VIN duplicate validation is now complete and integrated
 
 **Priority 2: Checkout Flow (Phase 5)**
 - Checkout page with order summary
