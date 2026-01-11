@@ -441,6 +441,60 @@
 
 ---
 
+### [DECISION-025] Temporarily Disable Grouped View
+**Date**: 2026-01-11
+**Status**: Accepted
+**Context**: The grouped view feature is complete but the user wants to focus on other features first (flat view for now) and return to grouping later.
+**Decision**: Disable the "Grouped" tab in the view mode toggle without removing the code.
+**Rationale**:
+- User wants to prioritize other features before polishing grouped view
+- All grouped view code remains intact for future use
+- Easy to re-enable: just modify `DISABLED_VIEW_MODES` array in `buyer-browse-client.tsx`
+- Clear UX indicator "(Soon)" shows users the feature is coming
+**Consequences**:
+- Browse page defaults to flat view only
+- Grouped tab shows as disabled with "(Soon)" text
+- URL/localStorage with `view=grouped` is ignored, defaults to flat
+- To re-enable: change `const DISABLED_VIEW_MODES: ViewMode[] = ['grouped'];` to `[]`
+
+---
+
+### [DECISION-026] Approved Negotiations as Completed Deals
+**Date**: 2026-01-11
+**Status**: Accepted
+**Context**: When a seller approves a negotiation (SELLER_APPROVED status), what should happen when the buyer clicks "Negotiate" again for the same seller with new cart items?
+**Decision**: SELLER_APPROVED negotiations are treated as completed deals, not active negotiations. Buyers can start new negotiations with the same seller.
+**Rationale**:
+- A completed deal is done - payment/checkout is the next step
+- Buyers should be able to add new vehicles and negotiate separately
+- Prevents confusion between old approved deals and new negotiations
+- Approved deals are shown in a separate `/buyer/deals` page
+**Consequences**:
+- Active negotiation lookup only includes DRAFT and BUYER_FINALIZED statuses
+- Approved deals banner shown on negotiate page if any exist
+- New `/buyer/deals` page for viewing/proceeding with approved deals
+- Clear separation between negotiation (in-progress) and deals (ready for checkout)
+
+---
+
+### [DECISION-027] Auto-Clear Cart on Deal Approval
+**Date**: 2026-01-11
+**Status**: Accepted
+**Context**: When a negotiation is approved by the seller, what should happen to those items in the buyer's cart?
+**Decision**: Automatically remove the negotiation's vehicle IDs from the cart and redirect to the deals page.
+**Rationale**:
+- Prevents duplicate items (cart vs approved deal)
+- Clear user flow: approved items move to "Deals" for checkout
+- Reduces confusion about what's in cart vs what's ready to purchase
+- Automatic cleanup is better UX than manual removal
+**Consequences**:
+- useEffect watches negotiation status, triggers on SELLER_APPROVED
+- removeItems called with vehicle IDs from negotiation
+- Automatic redirect to `/buyer/deals/[id]`
+- Cart stays lean with only items still being negotiated or pending
+
+---
+
 ## Proposed Decisions
 
 (Add decisions under discussion here)

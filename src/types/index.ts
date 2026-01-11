@@ -115,6 +115,74 @@ export interface ColumnMapping {
   isDefault: boolean;
 }
 
+// Negotiation Types
+export type NegotiationStatus = 'DRAFT' | 'BUYER_FINALIZED' | 'SELLER_APPROVED' | 'CANCELLED';
+
+export interface NegotiationItem {
+  id: string;
+  negotiationId: string;
+  vehicleId: string;
+  systemPrice: number;
+  offerPrice: number;
+  vehicle?: Vehicle & {
+    images?: VehicleImage[];
+  };
+}
+
+export interface NegotiationMessage {
+  id: string;
+  negotiationId: string;
+  senderId: string;
+  senderRole: 'BUYER' | 'SELLER';
+  content: string;
+  createdAt: Date;
+}
+
+export interface Negotiation {
+  id: string;
+  buyerId: string;
+  sellerId: string;
+  status: NegotiationStatus;
+  incoterm: string;
+  depositPercent: number;
+  createdAt: Date;
+  updatedAt: Date;
+  items?: NegotiationItem[];
+  messages?: NegotiationMessage[];
+  seller?: Seller;
+}
+
+export interface NegotiationWithDetails extends Negotiation {
+  items: NegotiationItem[];
+  messages: NegotiationMessage[];
+  seller: Seller;
+  // Computed values
+  systemTotal: number;
+  negotiatedTotal: number;
+  savings: number;
+  tokenDueNow: number;
+  finalBalance: number;
+}
+
+export interface CreateNegotiationRequest {
+  sellerId: string;
+  items: {
+    vehicleId: string;
+    offerPrice: number;
+  }[];
+  incoterm?: string;
+  depositPercent?: number;
+}
+
+export interface UpdateNegotiationRequest {
+  items?: {
+    vehicleId: string;
+    offerPrice: number;
+  }[];
+  incoterm?: string;
+  depositPercent?: number;
+}
+
 // API Response Types
 export interface ApiResponse<T> {
   data?: T;

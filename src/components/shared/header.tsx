@@ -83,6 +83,14 @@ export function Header({ user }: HeaderProps) {
                   >
                     Browse
                   </Link>
+                  <Link
+                    href="/buyer/deals"
+                    className={`text-sm font-medium transition-colors hover:text-foreground ${
+                      pathname.startsWith('/buyer/deals') ? 'text-foreground' : 'text-muted-foreground'
+                    }`}
+                  >
+                    Deals
+                  </Link>
                   <CartBadge />
                 </>
               )}
@@ -149,6 +157,13 @@ export function Header({ user }: HeaderProps) {
                         className="text-lg font-medium"
                       >
                         Browse
+                      </Link>
+                      <Link
+                        href="/buyer/deals"
+                        onClick={() => setOpen(false)}
+                        className="text-lg font-medium"
+                      >
+                        Deals
                       </Link>
                       <Link
                         href="/buyer/cart"

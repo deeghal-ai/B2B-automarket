@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { LayoutDashboard, Upload, Package } from 'lucide-react';
+import { LayoutDashboard, Upload, Package, Handshake } from 'lucide-react';
 
 export default async function SellerLayout({
   children,
@@ -53,6 +53,13 @@ export default async function SellerLayout({
           >
             <Package className="h-5 w-5" />
             Inventory
+          </Link>
+          <Link
+            href="/seller/negotiations"
+            className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+          >
+            <Handshake className="h-5 w-5" />
+            Negotiations
           </Link>
         </nav>
 

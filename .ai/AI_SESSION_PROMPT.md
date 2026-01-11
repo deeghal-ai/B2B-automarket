@@ -80,7 +80,9 @@ Update content for each file.
 
 ## Today's Session
 
-**What I want to work on today:** i want to implement a validation when uploaqding inventory to check against the database for existing VINs and not allowingh to import the ones that exist already. Plan it in the most efficient way
+**What I want to work on today:** i want to implement a new feature. in cart, change the button Submit Quote Request to "Negotiate"
+it should open a page like this(negotiation module): after buyer finalizes terms the seller can it like this and then approve terms as the seller. once its approved they can add this item(s)to checkout flow(order management) which i will explain later.
+Plan the feature carefully and create a file in specs - features folder (use good code practices) first before beginning development.
 
 **Relevant spec file:**
 

@@ -4,15 +4,14 @@ import { useCartStore } from '@/stores/cart-store';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import Link from 'next/link';
 import { 
   Trash2, 
   FileText, 
   ArrowLeft, 
   User, 
-  MessageSquare,
-  Send
+  Handshake,
+  ArrowRight
 } from 'lucide-react';
 import { formatPrice } from '@/lib/utils';
 
@@ -22,8 +21,6 @@ export default function QuoteBuilderPage() {
   const clearCart = useCartStore((state) => state.clearCart);
   const getTotal = useCartStore((state) => state.getTotal);
   const getItemsBySeller = useCartStore((state) => state.getItemsBySeller);
-  const sellerNotes = useCartStore((state) => state.sellerNotes);
-  const updateSellerNote = useCartStore((state) => state.updateSellerNote);
 
   const total = getTotal();
   const itemsBySeller = getItemsBySeller();
@@ -163,21 +160,15 @@ export default function QuoteBuilderPage() {
                     </div>
                   ))}
                   
-                  {/* Negotiation notes */}
-                  <div className="pt-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Negotiation Notes for {sellerName}</span>
-                    </div>
-                    <Textarea
-                      placeholder="Add any special requests, delivery dates, inspection requirements, or negotiation points..."
-                      value={sellerNotes[sellerId] || ''}
-                      onChange={(e) => updateSellerNote(sellerId, e.target.value)}
-                      className="min-h-[80px] resize-none"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1.5">
-                      Example: &quot;Need delivery by Dec 15&quot;, &quot;Inspection required before purchase&quot;, &quot;Interested in bulk discount&quot;
-                    </p>
+                  {/* Negotiate button */}
+                  <div className="pt-2 border-t">
+                    <Link href={`/buyer/negotiate/${sellerId}`}>
+                      <Button className="w-full" size="lg">
+                        <Handshake className="h-4 w-4 mr-2" />
+                        Negotiate with {sellerName}
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -199,7 +190,7 @@ export default function QuoteBuilderPage() {
               <div>
                 <h3 className="font-medium mb-3">Breakdown by Seller</h3>
                 <div className="space-y-3">
-                      {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
+                  {Object.entries(itemsBySeller).map(([sellerId, sellerItems]) => {
                     const sellerTotal = sellerItems.reduce((sum, item) => sum + (item.price ?? 0), 0);
                     const sellerName = sellerItems[0].sellerName;
                     const currency = sellerItems[0].currency || 'USD';
@@ -244,15 +235,16 @@ export default function QuoteBuilderPage() {
                 </div>
               </div>
 
-              {/* Submit button */}
-              <Button className="w-full bg-green-600 hover:bg-green-700 text-white" size="lg">
-                <Send className="h-4 w-4 mr-2" />
-                Submit Quote Request
-              </Button>
-
-              <p className="text-xs text-muted-foreground text-center">
-                Your quote will be sent to all sellers. They will respond with their best offers.
-              </p>
+              {/* Instructions */}
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="flex items-start gap-2">
+                  <Handshake className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-muted-foreground">
+                    <p className="font-medium text-foreground mb-1">How to proceed:</p>
+                    <p>Click &quot;Negotiate&quot; on each seller group to propose your terms, discuss pricing, and finalize the deal.</p>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

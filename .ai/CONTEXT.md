@@ -11,9 +11,9 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 ## Current State
 
-**Last Updated**: January 09, 2026
-**Last Session Focus**: VIN Duplicate Validation for Bulk Upload
-**Current Phase**: Phase 4 Complete + Fuzzy Matching Feature Designed + VIN Validation
+**Last Updated**: January 11, 2026
+**Last Session Focus**: Negotiation Module Fixes + Approved Deals Page
+**Current Phase**: Phase 4 Complete + Negotiation Module Complete + Approved Deals + Fuzzy Matching Designed
 **Production URL**: https://b2-b-automarket.vercel.app
 
 ### What's Been Built
@@ -65,6 +65,8 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 - [x] **Vercel deployment configured with serverless Chromium**
 - [x] **DESIGNED: Fuzzy matching for Make/Model/Variant validation** (implementation files ready)
 - [x] **VIN duplicate validation during upload** - checks existing VINs before import
+- [x] **Grouped view temporarily disabled** - shows "(Soon)" indicator, code preserved for later
+- [x] **Negotiation Module** - seller-level deal rooms with price/terms negotiation and chat
 - [ ] Save/load column mappings to database
 - [ ] Checkout flow
 
@@ -124,11 +126,12 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
 
 4. **Buyer Features (Phase 4 Complete)**
    - Browse page with dynamic grouping
-   - **NEW: Grouped/Flat View Toggle**:
+   - **Grouped/Flat View Toggle**:
      - Toggle between "Grouped" and "Flat" view modes
-     - Grouped: Shows grouped listings by selected parameters (original behavior)
+     - **Grouped: TEMPORARILY DISABLED** (shows "Soon" indicator, code preserved)
      - Flat: Table view of individual vehicles with sortable columns
      - View mode saved to URL and localStorage
+     - To re-enable grouped: change `DISABLED_VIEW_MODES` in `buyer-browse-client.tsx`
    - **Flat View Features**:
      - Sortable columns (click header to sort): Make, Year, Mileage, Price
      - Checkbox selection per row + "Select All" header
@@ -215,6 +218,54 @@ A B2B marketplace for UAE car dealers to bulk-purchase used cars from China. The
      - Set primary image functionality
      - Delete images (removes from storage + database)
      - Image grid preview with reorder capability (primary shown first)
+
+9. **Negotiation Module (Complete)**
+   - Seller-level deal rooms for price/terms negotiation
+   - Cart page updated with per-seller "Negotiate" button
+   - **Full-Page Negotiation UI** (converted from modal for better UX):
+     - Two-column layout: Terms (left) + Chat (right)
+     - Vehicle list with images, system price, offer input
+     - Savings calculation per vehicle
+     - Incoterm toggle (FOB/CIF)
+     - Deposit % selection (10%/20%/30%)
+     - Summary box: System Total, Negotiated Deal, Token Due Now, Final Balance
+   - **Chat Panel**:
+     - Message thread with sender role and timestamp
+     - Manual refresh button
+     - Buyer/Seller status indicators
+   - **Workflow States**:
+     - DRAFT: Buyer can edit terms
+     - BUYER_FINALIZED: Buyer locked terms, awaiting seller
+     - SELLER_APPROVED: Ready for checkout → redirects to Deals page
+   - **Performance Optimizations**:
+     - Added sellerId filter to negotiations API for faster lookups
+     - Added minimal=true option for lightweight queries
+     - Added composite index on (buyerId, sellerId)
+     - Fixed infinite re-render issues with useRef initialization
+   - **Add Items to Existing Negotiation**:
+     - POST /api/negotiations/[id]/items adds new cart items to DRAFT negotiation
+     - Auto-detects new cart items when opening negotiation page
+   - **Seller Negotiations Page**:
+     - List of incoming negotiations with status badges
+     - Summary cards for pending/awaiting/approved counts
+     - Click to open full-page negotiation view
+   - **Database Models**: Negotiation, NegotiationItem, NegotiationMessage
+   - **API Routes**:
+     - POST/GET /api/negotiations (with sellerId, minimal, status filters)
+     - GET/PATCH /api/negotiations/[id]
+     - POST /api/negotiations/[id]/items (add items to negotiation)
+     - POST /api/negotiations/[id]/finalize
+     - POST /api/negotiations/[id]/approve
+     - GET/POST /api/negotiations/[id]/messages
+
+10. **Approved Deals Page (NEW)**
+    - `/buyer/deals` - Lists all SELLER_APPROVED negotiations
+    - `/buyer/deals/[id]` - Individual deal detail view (read-only)
+    - Shows vehicles, final prices, terms, message history
+    - "Proceed to Checkout" button (placeholder for checkout flow)
+    - **Auto-Cart Clearing**: When negotiation approved, items removed from cart
+    - **Navigation**: "Deals" link added to buyer header
+    - **Approved Deals Banner**: Shows on negotiate page if approved deals exist with seller
 
 ---
 
@@ -335,24 +386,32 @@ src/
 │   │   ├── grouped-listing-card.tsx # Card for grouped vehicles (shows in-cart badge)
 │   │   ├── vehicle-selection-list.tsx # Expandable list within group (clickable rows)
 │   │   ├── buyer-browse-client.tsx # Client wrapper for browse page
-│   │   └── search-filters.tsx      # NEW: Collapsible filter panel with all filters
+│   │   └── search-filters.tsx      # Collapsible filter panel with all filters
 ├── app/
 │   ├── api/
 │   │   ├── upload/
 │   │   │   ├── validate/route.ts   # POST validation endpoint
 │   │   │   └── import/route.ts     # POST import endpoint
+│   │   ├── negotiations/
+│   │   │   ├── route.ts            # POST create / GET list negotiations
+│   │   │   └── [id]/
+│   │   │       ├── route.ts        # GET / PATCH negotiation
+│   │   │       ├── items/route.ts  # POST add items to negotiation
+│   │   │       ├── finalize/route.ts  # POST buyer finalize
+│   │   │       ├── approve/route.ts   # POST seller approve
+│   │   │       └── messages/route.ts  # GET / POST messages
 │   │   ├── seller/
 │   │   │   └── vehicles/
 │   │   │       ├── route.ts        # GET list vehicles with filters/pagination
 │   │   │       ├── [id]/
 │   │   │       │   ├── route.ts    # PATCH (status OR full update) / DELETE single vehicle
 │   │   │       │   └── images/
-│   │   │       │       ├── route.ts       # NEW: POST upload / GET list images
-│   │   │       │       └── [imageId]/route.ts # NEW: PATCH set primary / DELETE image
+│   │   │       │       ├── route.ts       # POST upload / GET list images
+│   │   │       │       └── [imageId]/route.ts # PATCH set primary / DELETE image
 │   │   │       └── bulk/route.ts   # POST bulk actions
 │   │   └── vehicles/
-│   │       ├── grouped/route.ts    # NEW: POST dynamic grouping endpoint
-│   │       └── by-ids/route.ts     # NEW: POST fetch vehicles by IDs
+│   │       ├── grouped/route.ts    # POST dynamic grouping endpoint
+│   │       └── by-ids/route.ts     # POST fetch vehicles by IDs
 │   ├── seller/
 │   │   ├── layout.tsx              # Seller sidebar layout
 │   │   ├── page.tsx                # Seller dashboard
@@ -360,14 +419,22 @@ src/
 │   │   │   └── page.tsx            # Full 3-step wizard with validation & import
 │   │   ├── inventory/
 │   │   │   └── page.tsx            # Inventory management page
+│   │   ├── negotiations/
+│   │   │   ├── page.tsx            # Seller negotiations list
+│   │   │   └── [id]/page.tsx       # Seller negotiation detail
 │   │   └── vehicle/
 │   │       └── [id]/
-│   │           └── edit/page.tsx   # NEW: Edit vehicle page
+│   │           └── edit/page.tsx   # Edit vehicle page
 │   └── buyer/
 │       ├── layout.tsx              # Buyer layout
 │       ├── page.tsx                # Browse vehicles
 │       ├── cart/page.tsx           # Shopping cart
-│       └── vehicle/[id]/page.tsx   # Vehicle detail
+│       ├── vehicle/[id]/page.tsx   # Vehicle detail
+│       ├── negotiate/
+│       │   └── [sellerId]/page.tsx # Negotiation page (full-page)
+│       └── deals/
+│           ├── page.tsx            # Approved deals list
+│           └── [id]/page.tsx       # Deal detail (read-only)
 ```
 
 ### Environment Variables Needed
@@ -584,19 +651,20 @@ const { summary, results } = await response.json();
 
 ## Next Session Should Focus On
 
-**Priority 1: Implement Fuzzy Matching**
+**Priority 1: Checkout Flow (Phase 5)**
+- Checkout page for approved deals
+- Payment summary with token due vs final balance
+- Contact/notes field
+- Submit order (create order from approved negotiation)
+- Order confirmation page
+- Link from `/buyer/deals/[id]` "Proceed to Checkout" button
+
+**Priority 2: Implement Fuzzy Matching**
 - Copy files from previous session's outputs to project
 - Run Prisma migration for MasterVehicleData model
 - Seed master data from Excel file
 - Test upload flow with 4-step wizard
 - Note: VIN duplicate validation is now complete and integrated
-
-**Priority 2: Checkout Flow (Phase 5)**
-- Checkout page with order summary
-- Contact/notes field
-- Submit inquiry (create order)
-- Order confirmation page
-- Spec file: `specs/features/buyer-cart.md`
 
 **Priority 3: Save/Load Column Mappings**
 - API routes: GET/POST/DELETE /api/mappings

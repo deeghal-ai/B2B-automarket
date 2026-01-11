@@ -207,10 +207,41 @@ Files created, need to copy to project:
 
 ---
 
+## ✅ Completed: Negotiation Module
+
+### P0 - Core Negotiation Feature (Complete)
+- [x] Negotiation database models (Negotiation, NegotiationItem, NegotiationMessage)
+- [x] Create negotiation API (POST /api/negotiations)
+- [x] Get/Update negotiation APIs (GET/PATCH /api/negotiations/[id])
+- [x] Finalize/Approve APIs (POST finalize, POST approve)
+- [x] Messages API (GET/POST /api/negotiations/[id]/messages)
+- [x] Negotiation full-page UI with two-column layout (Terms + Chat)
+- [x] Per-seller "Negotiate" button in cart
+- [x] Seller negotiations list page at /seller/negotiations
+- [x] Seller negotiation detail page at /seller/negotiations/[id]
+- [x] Navigation link in seller sidebar
+
+### P1 - Negotiation Fixes & Improvements (Complete - Jan 11, 2026)
+- [x] Fixed active negotiation filter (exclude SELLER_APPROVED from lookup)
+- [x] Added approved deals banner on negotiate page
+- [x] Performance optimization: sellerId filter, minimal mode, composite index
+- [x] Add items API: POST /api/negotiations/[id]/items
+- [x] Auto-add new cart items to existing DRAFT negotiation
+- [x] Fixed infinite re-render issue with useRef initialization
+
+### P2 - Approved Deals Page (Complete - Jan 11, 2026)
+- [x] `/buyer/deals` - List all SELLER_APPROVED negotiations
+- [x] `/buyer/deals/[id]` - Deal detail view (read-only)
+- [x] Auto-clear cart items when negotiation approved
+- [x] Redirect from negotiate page to deals page on approval
+- [x] "Deals" link added to buyer header navigation
+
+---
+
 ## Phase 5: Checkout
 
-### P1 - Basic Checkout
-- [ ] Checkout page
+### P1 - Basic Checkout (After Negotiation Approval)
+- [ ] Checkout page for approved negotiations
 - [ ] Order summary by seller
 - [ ] Contact/notes field
 - [ ] Submit inquiry (create order)
@@ -278,4 +309,8 @@ Files created, need to copy to project:
 | Dec 22, 2024 | Vercel Deployment | ✅ @sparticuz/chromium for serverless, vercel.json, env vars, TypeScript fixes, deployed to production |
 | Jan 07, 2026 | Fuzzy Matching Design | ✅ Designed fuzzy logic for Make/Model/Variant, created all implementation files, proof of concept tested |
 | Jan 09, 2026 | VIN Duplicate Validation | ✅ Added VIN duplicate check to validation API, shows existing VINs as errors, auto-excludes from import |
-| Next session | Fuzzy Matching Integration | Copy files to project, run migrations, seed master data, test flow |
+| Jan 11, 2026 | Disable Grouped View | ✅ Temporarily disabled "Grouped" tab with "(Soon)" indicator, code preserved for later |
+| Jan 11, 2026 | Negotiation Module | ✅ Full negotiation feature: DB models, API routes, full-page UI with terms+chat, cart integration, seller view |
+| Jan 11, 2026 | Negotiation Fixes | ✅ Fixed approved deal handling, performance optimization, add items to existing negotiation, infinite re-render fix |
+| Jan 11, 2026 | Approved Deals Page | ✅ /buyer/deals list + detail pages, auto-cart clearing, redirect on approval, header nav link |
+| Next session | Checkout Flow | Implement checkout for approved deals: order creation, payment info, confirmation |

@@ -135,8 +135,12 @@ export function BuyerBrowseClient() {
   const searchParams = useSearchParams();
 
   // View mode state
-  const [viewMode, setViewMode] = useState<ViewMode>('grouped');
+  // Note: 'grouped' mode is temporarily disabled - always start with 'flat'
+  const [viewMode, setViewMode] = useState<ViewMode>('flat');
   const [viewModeInitialized, setViewModeInitialized] = useState(false);
+  
+  // Temporarily disable grouped mode - remove this when re-enabling grouping
+  const DISABLED_VIEW_MODES: ViewMode[] = ['grouped'];
 
   // Grouping state (for grouped view)
   const [groupBy, setGroupBy] = useState<GroupingField[]>([...DEFAULT_GROUPING_FIELDS]);
@@ -178,13 +182,24 @@ export function BuyerBrowseClient() {
   // Initialize all state from URL on mount
   useEffect(() => {
     // View mode from URL or localStorage
+    // Note: If 'grouped' mode is disabled, always default to 'flat'
     const urlView = searchParams.get('view');
     if (urlView === 'flat' || urlView === 'grouped') {
-      setViewMode(urlView);
+      // If grouped is disabled, force to flat
+      if (urlView === 'grouped' && DISABLED_VIEW_MODES.includes('grouped')) {
+        setViewMode('flat');
+      } else {
+        setViewMode(urlView);
+      }
     } else {
       const storedView = localStorage.getItem(VIEW_MODE_STORAGE_KEY);
       if (storedView === 'flat' || storedView === 'grouped') {
-        setViewMode(storedView);
+        // If grouped is disabled, force to flat
+        if (storedView === 'grouped' && DISABLED_VIEW_MODES.includes('grouped')) {
+          setViewMode('flat');
+        } else {
+          setViewMode(storedView as ViewMode);
+        }
       }
     }
     setViewModeInitialized(true);
@@ -461,6 +476,7 @@ export function BuyerBrowseClient() {
           value={viewMode}
           onChange={handleViewModeChange}
           disabled={isLoading}
+          disabledModes={DISABLED_VIEW_MODES}
         />
         
         {!isLoading && (
