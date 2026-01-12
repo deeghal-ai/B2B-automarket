@@ -160,7 +160,7 @@ export default function NegotiatePage() {
 
               // Check if there are new cart items to add (only for DRAFT status)
               if (data.status === 'DRAFT' && currentCartItems.length > 0) {
-                const existingVehicleIds = new Set(
+                const existingVehicleIds = new Set<string>(
                   data.items.map((item: NegotiationItem) => item.vehicleId)
                 );
                 
