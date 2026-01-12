@@ -166,7 +166,7 @@ export default function NegotiatePage() {
                 
                 const updatedData = await addNewItemsToNegotiation(
                   existing.id,
-                  currentCartItems.map((item) => ({ id: item.id, price: item.price })),
+                  currentCartItems.map((item) => ({ id: item.id, price: item.price ?? 0 })),
                   existingVehicleIds
                 );
 
