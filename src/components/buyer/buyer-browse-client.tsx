@@ -135,12 +135,11 @@ export function BuyerBrowseClient() {
   const searchParams = useSearchParams();
 
   // View mode state
-  // Note: 'grouped' mode is temporarily disabled - always start with 'flat'
   const [viewMode, setViewMode] = useState<ViewMode>('flat');
   const [viewModeInitialized, setViewModeInitialized] = useState(false);
   
-  // Temporarily disable grouped mode - remove this when re-enabling grouping
-  const DISABLED_VIEW_MODES: ViewMode[] = ['grouped'];
+  // View modes to disable (empty array = all modes enabled)
+  const DISABLED_VIEW_MODES: ViewMode[] = [];
 
   // Grouping state (for grouped view)
   const [groupBy, setGroupBy] = useState<GroupingField[]>([...DEFAULT_GROUPING_FIELDS]);
